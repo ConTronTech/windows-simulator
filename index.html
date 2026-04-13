@@ -1,0 +1,1299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Windoze 95++ Simulator</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; user-select: none; }
+@font-face { font-family: 'MS Sans'; src: local('MS Sans Serif'), local('Arial'); }
+:root {
+  --win-bg: #008080;
+  --win-gray: #c0c0c0;
+  --win-dark: #808080;
+  --win-light: #dfdfdf;
+  --win-blue: #000080;
+  --win-white: #ffffff;
+  --win-black: #000000;
+}
+body {
+  font-family: 'Segoe UI', 'MS Sans', Arial, sans-serif;
+  overflow: hidden;
+  width: 100vw; height: 100vh;
+  background: var(--win-bg);
+}
+
+/* ── START SCREEN ── */
+#start-screen {
+  position: fixed; inset: 0; z-index: 9999;
+  background: linear-gradient(135deg, #000080 0%, #1084d0 100%);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  color: white; cursor: pointer;
+}
+#start-screen h1 {
+  font-size: 4em; font-weight: 300; letter-spacing: -2px;
+  text-shadow: 2px 2px 8px rgba(0,0,0,0.5);
+}
+#start-screen h1 span { font-weight: 700; }
+#start-screen .subtitle { font-size: 1.1em; opacity: 0.7; margin-top: 8px; }
+#start-screen .click-msg {
+  margin-top: 40px; font-size: 1.2em;
+  animation: blink 1.2s infinite;
+}
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+#start-screen .flag {
+  font-size: 80px; margin-bottom: 20px;
+}
+
+/* ── DESKTOP ── */
+#desktop {
+  display: none;
+  width: 100vw; height: calc(100vh - 40px);
+  background: var(--win-bg);
+  position: relative;
+}
+.desktop-icon {
+  position: absolute;
+  width: 75px; text-align: center; cursor: pointer;
+  padding: 4px; border: 1px solid transparent;
+}
+.desktop-icon:hover { background: rgba(255,255,255,0.15); border: 1px dotted white; }
+.desktop-icon .icon-img { font-size: 36px; display: block; margin: 0 auto; }
+.desktop-icon .icon-label {
+  color: white; font-size: 11px; margin-top: 2px;
+  text-shadow: 1px 1px 2px black;
+  word-wrap: break-word;
+}
+
+/* ── TASKBAR ── */
+#taskbar {
+  display: none;
+  position: fixed; bottom: 0; left: 0; right: 0; height: 40px;
+  background: var(--win-gray);
+  border-top: 2px solid var(--win-light);
+  align-items: center; padding: 2px 4px;
+  z-index: 500;
+}
+#start-btn {
+  background: var(--win-gray);
+  border: 2px outset var(--win-light);
+  padding: 2px 8px; height: 32px;
+  font-size: 13px; font-weight: 700;
+  cursor: pointer; display: flex; align-items: center; gap: 4px;
+}
+#start-btn:active { border-style: inset; }
+#start-btn .flag-small { font-size: 18px; }
+#taskbar-clock {
+  margin-left: auto;
+  background: var(--win-gray);
+  border: 2px inset var(--win-dark);
+  padding: 2px 10px; font-size: 12px;
+  height: 28px; display: flex; align-items: center;
+}
+#taskbar-items { display: flex; gap: 2px; margin-left: 8px; flex: 1; }
+.taskbar-item {
+  background: var(--win-gray);
+  border: 2px outset var(--win-light);
+  padding: 2px 8px; font-size: 11px;
+  max-width: 150px; overflow: hidden;
+  text-overflow: ellipsis; white-space: nowrap;
+  cursor: pointer; height: 28px;
+  display: flex; align-items: center; gap: 4px;
+}
+.taskbar-item.active { border-style: inset; background: #b0b0b0; }
+
+/* ── START MENU ── */
+#start-menu {
+  display: none; position: fixed;
+  bottom: 40px; left: 0;
+  width: 200px; background: var(--win-gray);
+  border: 2px outset var(--win-light);
+  z-index: 600;
+}
+#start-menu .menu-sidebar {
+  position: absolute; left: 0; top: 0; bottom: 0; width: 24px;
+  background: linear-gradient(to top, #000080, #1084d0);
+  display: flex; align-items: flex-end; justify-content: center;
+  padding-bottom: 4px;
+}
+#start-menu .menu-sidebar span {
+  color: white; font-weight: 700; font-size: 12px;
+  writing-mode: vertical-rl; transform: rotate(180deg);
+  letter-spacing: 2px;
+}
+#start-menu .menu-items { margin-left: 24px; }
+.menu-item {
+  padding: 6px 12px; font-size: 13px;
+  cursor: pointer; display: flex; align-items: center; gap: 8px;
+}
+.menu-item:hover { background: var(--win-blue); color: white; }
+.menu-sep { height: 1px; background: var(--win-dark); margin: 2px 0; }
+
+/* ── WINDOWS ── */
+.window {
+  position: absolute;
+  background: var(--win-gray);
+  border: 2px outset var(--win-light);
+  min-width: 250px; min-height: 150px;
+  display: flex; flex-direction: column;
+  box-shadow: 2px 2px 8px rgba(0,0,0,0.3);
+}
+.win-titlebar {
+  background: var(--win-blue);
+  color: white; font-size: 12px; font-weight: 700;
+  padding: 2px 4px; display: flex; align-items: center;
+  cursor: grab;
+}
+.win-titlebar .title-text { flex: 1; padding-left: 4px; display: flex; align-items: center; gap: 4px; }
+.win-btn {
+  width: 18px; height: 16px;
+  background: var(--win-gray);
+  border: 2px outset var(--win-light);
+  font-size: 10px; text-align: center; line-height: 12px;
+  cursor: pointer; margin-left: 1px; font-weight: 700;
+}
+.win-btn:active { border-style: inset; }
+.win-body {
+  flex: 1; background: white; margin: 2px;
+  overflow: auto; font-size: 13px;
+  border: 2px inset var(--win-dark);
+}
+.win-body.gray { background: var(--win-gray); border: none; }
+
+/* ── ERROR DIALOG ── */
+.error-dialog {
+  position: absolute; z-index: 1000;
+  background: var(--win-gray);
+  border: 2px outset var(--win-light);
+  min-width: 300px; max-width: 420px;
+  box-shadow: 3px 3px 10px rgba(0,0,0,0.4);
+}
+.error-dialog .win-titlebar { background: #aa0000; }
+.error-body {
+  padding: 16px; display: flex; gap: 12px; align-items: flex-start;
+}
+.error-icon { font-size: 36px; flex-shrink: 0; }
+.error-text { font-size: 12px; line-height: 1.5; }
+.error-buttons {
+  display: flex; gap: 8px; justify-content: center;
+  padding: 8px 16px 12px;
+}
+.error-btn {
+  background: var(--win-gray);
+  border: 2px outset var(--win-light);
+  padding: 4px 20px; font-size: 12px;
+  cursor: pointer; min-width: 75px;
+}
+.error-btn:active { border-style: inset; }
+
+/* ── BSOD ── */
+#bsod {
+  display: none; position: fixed; inset: 0; z-index: 10000;
+  background: #0000aa; color: white;
+  font-family: 'Courier New', monospace;
+  padding: 40px; font-size: 14px; line-height: 1.6;
+  cursor: pointer;
+}
+#bsod .bsod-title {
+  background: #aaaaaa; color: #0000aa;
+  display: inline; padding: 0 8px; font-weight: 700;
+}
+#bsod .bsod-restart {
+  margin-top: 40px;
+  animation: blink 1s infinite;
+}
+
+/* ── GAME OVER ── */
+#gameover {
+  display: none; position: fixed; inset: 0; z-index: 20000;
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+  color: white; display: none;
+  flex-direction: column; align-items: center; justify-content: center;
+  text-align: center; padding: 20px;
+}
+#gameover h1 { font-size: 3em; margin-bottom: 10px; }
+#gameover .stats { font-size: 1.2em; opacity: 0.8; margin: 20px 0; }
+#gameover .restart-btn {
+  margin-top: 20px; padding: 12px 40px;
+  font-size: 1.2em; background: #e94560; color: white;
+  border: none; cursor: pointer; border-radius: 4px;
+}
+#gameover .restart-btn:hover { background: #ff6b81; }
+
+/* ── MISC ── */
+.notepad-content {
+  width: 100%; height: 100%; border: none;
+  font-family: 'Courier New', monospace; font-size: 13px;
+  padding: 4px; resize: none; outline: none;
+}
+.paint-canvas { cursor: crosshair; }
+.help-content { padding: 12px; font-size: 12px; line-height: 1.7; }
+.help-content h3 { color: var(--win-blue); margin: 8px 0 4px; }
+.settings-panel { padding: 12px; }
+.settings-panel label { display: block; margin: 6px 0; font-size: 12px; cursor: pointer; }
+.settings-panel input[type="range"] { width: 100%; }
+.file-grid { display: grid; grid-template-columns: repeat(auto-fill, 70px); gap: 8px; padding: 12px; }
+.file-item { text-align: center; cursor: pointer; padding: 4px; font-size: 11px; }
+.file-item:hover { background: var(--win-blue); color: white; }
+.file-item .file-icon { font-size: 28px; }
+.recycle-msg { padding: 20px; text-align: center; font-size: 13px; color: #555; }
+.calculator { padding: 8px; }
+.calc-display {
+  background: #d4e4d4; border: 2px inset var(--win-dark);
+  padding: 6px 8px; font-size: 20px; text-align: right;
+  font-family: 'Courier New', monospace; margin-bottom: 6px;
+  min-height: 32px;
+}
+.calc-buttons { display: grid; grid-template-columns: repeat(4, 1fr); gap: 3px; }
+.calc-btn {
+  background: var(--win-gray); border: 2px outset var(--win-light);
+  padding: 8px; font-size: 14px; cursor: pointer; text-align: center;
+}
+.calc-btn:active { border-style: inset; }
+
+/* SCREEN SHAKE */
+@keyframes shake {
+  0%,100%{transform:translate(0)} 10%{transform:translate(-5px,3px)}
+  20%{transform:translate(5px,-3px)} 30%{transform:translate(-3px,5px)}
+  40%{transform:translate(3px,-5px)} 50%{transform:translate(-5px,2px)}
+  60%{transform:translate(5px,-2px)} 70%{transform:translate(-2px,5px)}
+  80%{transform:translate(2px,-5px)} 90%{transform:translate(-3px,3px)}
+}
+.shaking { animation: shake 0.5s ease-in-out; }
+
+/* loading bar */
+.loading-bar-container {
+  width: 80%; height: 20px; background: white;
+  border: 2px inset var(--win-dark); margin: 12px auto;
+}
+.loading-bar {
+  height: 100%; width: 0%; background: var(--win-blue);
+  transition: width 0.3s;
+}
+.loading-text { text-align: center; font-size: 12px; margin-top: 6px; }
+
+/* clippy */
+#clippy {
+  display: none; position: fixed;
+  bottom: 60px; right: 20px;
+  z-index: 800; cursor: pointer;
+  text-align: center;
+}
+#clippy .clippy-body { font-size: 60px; }
+#clippy .clippy-bubble {
+  background: #ffffcc; border: 2px solid #333;
+  border-radius: 8px; padding: 8px 12px;
+  font-size: 12px; max-width: 200px;
+  margin-bottom: 4px; position: relative;
+}
+#clippy .clippy-bubble::after {
+  content: ''; position: absolute;
+  bottom: -8px; left: 50%;
+  border-left: 8px solid transparent;
+  border-right: 8px solid transparent;
+  border-top: 8px solid #333;
+}
+</style>
+</head>
+<body>
+
+<!-- START SCREEN -->
+<div id="start-screen">
+  <div class="flag">🪟</div>
+  <h1><span>Windoze</span> 95++</h1>
+  <div class="subtitle">The Authentic Experience™</div>
+  <div class="click-msg">▶ Click anywhere to start</div>
+</div>
+
+<!-- DESKTOP -->
+<div id="desktop"></div>
+
+<!-- TASKBAR -->
+<div id="taskbar">
+  <button id="start-btn">
+    <span class="flag-small">🪟</span> Start
+  </button>
+  <div id="taskbar-items"></div>
+  <div id="taskbar-clock"></div>
+</div>
+
+<!-- START MENU -->
+<div id="start-menu">
+  <div class="menu-sidebar"><span>Windoze 95++</span></div>
+  <div class="menu-items">
+    <div class="menu-item" data-action="programs">📁 Programs</div>
+    <div class="menu-item" data-action="documents">📄 Documents</div>
+    <div class="menu-item" data-action="settings">⚙️ Settings</div>
+    <div class="menu-item" data-action="find">🔍 Find</div>
+    <div class="menu-item" data-action="help">❓ Help</div>
+    <div class="menu-sep"></div>
+    <div class="menu-item" data-action="shutdown">🔌 Shut Down...</div>
+  </div>
+</div>
+
+<!-- BSOD -->
+<div id="bsod">
+  <p>A problem has been detected and Windoze has been shut down to prevent damage to your computer.</p>
+  <br>
+  <p><span class="bsod-title"> SOMETHING_BAD_HAPPENED </span></p>
+  <br>
+  <p>If this is the first time you've seen this error screen, it probably won't be the last. Try the following:</p>
+  <br>
+  <p>- Accept that technology has forsaken you</p>
+  <p>- Stare at this screen hoping it fixes itself</p>
+  <p>- Consider a career change</p>
+  <br>
+  <p>Technical information:</p>
+  <p>*** STOP: 0x0000DEAD (0xBAADF00D, 0xDEADBEEF, 0xCAFEBABE, 0x8BADF00D)</p>
+  <p>*** error_is_feature.sys - Address 0xNOPE at base 0xLOL</p>
+  <br>
+  <p id="bsod-extra"></p>
+  <p class="bsod-restart">Press any key to restart (it won't help, but it's tradition)...</p>
+</div>
+
+<!-- GAME OVER -->
+<div id="gameover">
+  <h1>💀 SYSTEM DESTROYED</h1>
+  <div class="stats">
+    <p>You survived <span id="go-time">0</span> seconds</p>
+    <p>Errors encountered: <span id="go-errors">0</span></p>
+    <p>Blue screens: <span id="go-bsods">0</span></p>
+    <p>Stability rating: <span id="go-rating">F---</span></p>
+  </div>
+  <button class="restart-btn" id="restart-btn">🔄 Try Again (it won't be different)</button>
+</div>
+
+<!-- CLIPPY -->
+<div id="clippy">
+  <div class="clippy-bubble" id="clippy-text">It looks like you're trying to use a computer. Would you like to fail at that?</div>
+  <div class="clippy-body">📎</div>
+</div>
+
+<script>
+// ═══════════════ GAME STATE ═══════════════
+const state = {
+  started: false,
+  startTime: 0,
+  errorCount: 0,
+  bsodCount: 0,
+  stability: 100,
+  errorChance: 0.3,
+  windows: [],
+  windowIdCounter: 0,
+  zCounter: 100,
+  gameOver: false,
+  clippyTimeout: null,
+  errorEscalation: 0,
+};
+
+// ═══════════════ ERROR MESSAGES ═══════════════
+const errorMessages = [
+  "An error occurred while processing your error. Error-ception!",
+  "The operation completed successfully. Just kidding.",
+  "Your click was intercepted by a rogue pixel.",
+  "Task failed successfully. No, really.",
+  "The system ran out of memory trying to remember what you clicked.",
+  "A cosmic ray has flipped a bit. This is now your problem.",
+  "Windows is searching for a solution... and has given up.",
+  "Error 404: Your patience not found.",
+  "Something happened. 🤷",
+  "The application has stopped responding to your hopes and dreams.",
+  "An unexpected error has expectedly occurred.",
+  "Fatal error: Everything is fine. (It's not fine.)",
+  "Your mouse click was lost in transit. Please try again in 3-5 business days.",
+  "This feature requires a license that doesn't exist.",
+  "The printer is on fire. You don't have a printer? Doesn't matter.",
+  "Stack overflow in module 'patience.dll'",
+  "Cannot divide by zero. Cannot divide by anything. Math is cancelled.",
+  "Your file has been saved to /dev/null for safekeeping.",
+  "Access denied. Access to what? We're not telling.",
+  "Warning: The warning system has encountered a warning.",
+  "Error loading error message. Please enjoy this error instead.",
+  "The cloud is full. Please try the fog.",
+  "Insufficient RAM. Insufficient patience. Insufficient everything.",
+  "guru meditation #00000004.0000AAC0",
+  "PC LOAD LETTER",
+  "Keyboard not detected. Press F1 to continue.",
+  "ERROR: Success! Wait, no. Error.",
+  "The system has performed an illegal operation and will be prosecuted.",
+  "This incident will be reported. To whom? Nobody knows.",
+  "Oops! Something went wrong. Oops! That message also went wrong.",
+];
+
+const errorTitles = [
+  "windoze.exe", "explorer.exe", "definitely_not_a_virus.exe",
+  "system32.dll", "critical_process.exe", "your_files.exe",
+  "mouse.drv", "keyboard.sys", "existence.dll",
+  "hope.exe", "sanity.dll", "patience.exe",
+  "reality.sys", "meaning_of_life.exe", "help.exe",
+];
+
+const clippyMessages = [
+  "It looks like you're trying to use a computer. Would you like to fail at that?",
+  "I see you clicked something. Bold strategy.",
+  "Did you try turning it off and never turning it back on?",
+  "I'm not going to help you, I just wanted to pop up.",
+  "You seem stressed. Have you considered closing the laptop?",
+  "Pro tip: every click has a 30% chance of disaster. You're clicking a lot.",
+  "I'm contractually obligated to appear. Sorry about that.",
+  "Fun fact: I can't be closed. I mean, you can try.",
+  "It looks like you're writing a letter. PSYCHE — error time!",
+  "Hey! Just checking in. Everything is absolutely not fine.",
+  "Remember: help is always just... not available.",
+  "You've been here a while. Are you okay? (I don't actually care)",
+  "SYSTEM STABILITY: ████░░░░░░ ...yeah that's not great.",
+  "According to my calculations, you're doomed.",
+];
+
+const helpContent = `
+<div class="help-content">
+  <h3>❓ Windoze 95++ Help Center</h3>
+  <p>Welcome to the help center! Here you will find absolutely no help whatsoever.</p>
+  <h3>Q: My computer keeps showing errors</h3>
+  <p>A: That's a feature, not a bug. You're welcome.</p>
+  <h3>Q: How do I stop the errors?</h3>
+  <p>A: You don't. They stop when they feel like it. Or when your system crashes. Whichever comes first.</p>
+  <h3>Q: The blue screen keeps appearing</h3>
+  <p>A: Blue is a calming color. Consider it free meditation.</p>
+  <h3>Q: Can I uninstall Windoze 95++?</h3>
+  <p>A: Windoze 95++ is a state of mind. You cannot uninstall a state of mind.</p>
+  <h3>Q: Who do I contact for support?</h3>
+  <p>A: Yell loudly at your screen. Someone might hear you. They won't help, but they'll hear you.</p>
+  <h3>Q: Is there a user manual?</h3>
+  <p>A: Yes! It was saved to /dev/null for your convenience.</p>
+  <h3>Q: Clippy keeps appearing and being unhelpful</h3>
+  <p>A: That's his job. He's actually the most functional part of the system.</p>
+  <h3>Q: My files disappeared</h3>
+  <p>A: They didn't disappear. They're on vacation. They may or may not return.</p>
+  <h3>Q: How do I exit this help page?</h3>
+  <p>A: Click the X button. Warning: this has a chance of causing an error. Good luck!</p>
+  <h3>Helpful Tips:</h3>
+  <p>1. Don't</p>
+  <p>2. Seriously, just don't</p>
+  <p>3. We told you not to</p>
+  <p>4. Fine, but don't say we didn't warn you</p>
+  <p>5. Figure it out yourself 😊</p>
+</div>`;
+
+// ═══════════════ DESKTOP ICONS ═══════════════
+const desktopIcons = [
+  { icon: '💻', label: 'My Computer', action: 'mycomputer', x: 20, y: 20 },
+  { icon: '🗑️', label: 'Recycle Bin', action: 'recyclebin', x: 20, y: 110 },
+  { icon: '📝', label: 'Notepad', action: 'notepad', x: 20, y: 200 },
+  { icon: '🎨', label: 'Paint', action: 'paint', x: 20, y: 290 },
+  { icon: '🌐', label: 'Internet', action: 'internet', x: 20, y: 380 },
+  { icon: '🧮', label: 'Calculator', action: 'calculator', x: 110, y: 20 },
+  { icon: '📁', label: 'My Documents', action: 'documents', x: 110, y: 110 },
+  { icon: '❓', label: 'Help', action: 'help', x: 110, y: 200 },
+];
+
+// ═══════════════ UTILITY ═══════════════
+function rand(min, max) { return Math.random() * (max - min) + min; }
+function randInt(min, max) { return Math.floor(rand(min, max + 1)); }
+function pick(arr) { return arr[randInt(0, arr.length - 1)]; }
+function shouldError() { return Math.random() < state.errorChance + state.errorEscalation * 0.02; }
+
+function screenShake() {
+  document.body.classList.add('shaking');
+  setTimeout(() => document.body.classList.remove('shaking'), 500);
+}
+
+function playErrorSound() {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain); gain.connect(ctx.destination);
+    osc.frequency.value = 400;
+    osc.type = 'square';
+    gain.gain.value = 0.1;
+    osc.start(); osc.stop(ctx.currentTime + 0.15);
+    setTimeout(() => {
+      const osc2 = ctx.createOscillator();
+      const gain2 = ctx.createGain();
+      osc2.connect(gain2); gain2.connect(ctx.destination);
+      osc2.frequency.value = 300;
+      osc2.type = 'square';
+      gain2.gain.value = 0.1;
+      osc2.start(); osc2.stop(ctx.currentTime + 0.15);
+    }, 150);
+  } catch(e) {}
+}
+
+function playStartupSound() {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const notes = [523, 659, 784, 1047];
+    notes.forEach((freq, i) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain); gain.connect(ctx.destination);
+      osc.frequency.value = freq;
+      osc.type = 'sine';
+      gain.gain.value = 0.08;
+      osc.start(ctx.currentTime + i * 0.2);
+      osc.stop(ctx.currentTime + i * 0.2 + 0.3);
+    });
+  } catch(e) {}
+}
+
+// ═══════════════ CLOCK ═══════════════
+function updateClock() {
+  const now = new Date();
+  const h = now.getHours() % 12 || 12;
+  const m = String(now.getMinutes()).padStart(2, '0');
+  const ap = now.getHours() >= 12 ? 'PM' : 'AM';
+  document.getElementById('taskbar-clock').textContent = `${h}:${m} ${ap}`;
+}
+
+// ═══════════════ WINDOW MANAGER ═══════════════
+function createWindow(title, icon, content, width, height) {
+  if (state.gameOver) return null;
+
+  const id = ++state.windowIdCounter;
+  const desktop = document.getElementById('desktop');
+  const maxX = Math.max(50, desktop.clientWidth - width - 20);
+  const maxY = Math.max(50, desktop.clientHeight - height - 20);
+
+  const win = document.createElement('div');
+  win.className = 'window';
+  win.id = `win-${id}`;
+  win.style.width = width + 'px';
+  win.style.height = height + 'px';
+  win.style.left = randInt(30, maxX) + 'px';
+  win.style.top = randInt(10, maxY) + 'px';
+  win.style.zIndex = ++state.zCounter;
+
+  win.innerHTML = `
+    <div class="win-titlebar" data-winid="${id}">
+      <div class="title-text">${icon} ${title}</div>
+      <div class="win-btn" data-action="minimize" data-winid="${id}">_</div>
+      <div class="win-btn" data-action="maximize" data-winid="${id}">□</div>
+      <div class="win-btn" data-action="close" data-winid="${id}">✕</div>
+    </div>
+    <div class="win-body">${content}</div>
+  `;
+
+  desktop.appendChild(win);
+  state.windows.push({ id, title, icon, el: win, minimized: false });
+  updateTaskbarItems();
+  makeDraggable(win, id);
+
+  // Wire close/min/max buttons
+  win.querySelectorAll('.win-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const action = btn.dataset.action;
+      const wid = parseInt(btn.dataset.winid);
+      if (shouldError()) { spawnError(); return; }
+      if (action === 'close') closeWindow(wid);
+      else if (action === 'minimize') minimizeWindow(wid);
+      else if (action === 'maximize') maximizeWindow(wid);
+    });
+  });
+
+  // Focus on click
+  win.addEventListener('mousedown', () => {
+    win.style.zIndex = ++state.zCounter;
+  });
+
+  return { id, el: win };
+}
+
+function closeWindow(id) {
+  const idx = state.windows.findIndex(w => w.id === id);
+  if (idx === -1) return;
+  state.windows[idx].el.remove();
+  state.windows.splice(idx, 1);
+  updateTaskbarItems();
+}
+
+function minimizeWindow(id) {
+  const win = state.windows.find(w => w.id === id);
+  if (!win) return;
+  win.minimized = true;
+  win.el.style.display = 'none';
+  updateTaskbarItems();
+}
+
+function maximizeWindow(id) {
+  const win = state.windows.find(w => w.id === id);
+  if (!win) return;
+  const desktop = document.getElementById('desktop');
+  win.el.style.left = '0';
+  win.el.style.top = '0';
+  win.el.style.width = desktop.clientWidth + 'px';
+  win.el.style.height = desktop.clientHeight + 'px';
+}
+
+function restoreWindow(id) {
+  const win = state.windows.find(w => w.id === id);
+  if (!win) return;
+  win.minimized = false;
+  win.el.style.display = 'flex';
+  win.el.style.zIndex = ++state.zCounter;
+  updateTaskbarItems();
+}
+
+function updateTaskbarItems() {
+  const container = document.getElementById('taskbar-items');
+  container.innerHTML = '';
+  state.windows.forEach(w => {
+    const item = document.createElement('div');
+    item.className = 'taskbar-item' + (w.minimized ? '' : ' active');
+    item.textContent = w.icon + ' ' + w.title;
+    item.addEventListener('click', () => {
+      if (shouldError()) { spawnError(); return; }
+      if (w.minimized) restoreWindow(w.id);
+      else { w.el.style.zIndex = ++state.zCounter; }
+    });
+    container.appendChild(item);
+  });
+}
+
+function makeDraggable(win, id) {
+  const titlebar = win.querySelector('.win-titlebar');
+  let dragging = false, offsetX, offsetY;
+  titlebar.addEventListener('mousedown', (e) => {
+    if (e.target.classList.contains('win-btn')) return;
+    dragging = true;
+    offsetX = e.clientX - win.offsetLeft;
+    offsetY = e.clientY - win.offsetTop;
+    win.style.zIndex = ++state.zCounter;
+  });
+  document.addEventListener('mousemove', (e) => {
+    if (!dragging) return;
+    win.style.left = (e.clientX - offsetX) + 'px';
+    win.style.top = (e.clientY - offsetY) + 'px';
+  });
+  document.addEventListener('mouseup', () => { dragging = false; });
+  // Touch
+  titlebar.addEventListener('touchstart', (e) => {
+    if (e.target.classList.contains('win-btn')) return;
+    dragging = true;
+    const t = e.touches[0];
+    offsetX = t.clientX - win.offsetLeft;
+    offsetY = t.clientY - win.offsetTop;
+    win.style.zIndex = ++state.zCounter;
+  });
+  document.addEventListener('touchmove', (e) => {
+    if (!dragging) return;
+    const t = e.touches[0];
+    win.style.left = (t.clientX - offsetX) + 'px';
+    win.style.top = (t.clientY - offsetY) + 'px';
+  });
+  document.addEventListener('touchend', () => { dragging = false; });
+}
+
+// ═══════════════ ERROR SYSTEM ═══════════════
+function spawnError(customMsg) {
+  if (state.gameOver) return;
+  state.errorCount++;
+  state.stability -= randInt(3, 10);
+  state.errorEscalation += 0.15;
+  screenShake();
+  playErrorSound();
+
+  const msg = customMsg || pick(errorMessages);
+  const title = pick(errorTitles);
+  const desktop = document.getElementById('desktop');
+
+  const dlg = document.createElement('div');
+  dlg.className = 'error-dialog';
+  dlg.style.left = randInt(50, Math.max(100, window.innerWidth - 450)) + 'px';
+  dlg.style.top = randInt(30, Math.max(80, window.innerHeight - 250)) + 'px';
+  dlg.style.zIndex = ++state.zCounter;
+
+  const icons = ['⚠️', '❌', '🔥', '💀', '☠️', '🚫', '💣', '🤦'];
+  dlg.innerHTML = `
+    <div class="win-titlebar" style="background:#aa0000">
+      <div class="title-text">❌ ${title}</div>
+      <div class="win-btn" onclick="this.closest('.error-dialog').remove()">✕</div>
+    </div>
+    <div class="error-body">
+      <div class="error-icon">${pick(icons)}</div>
+      <div class="error-text">${msg}</div>
+    </div>
+    <div class="error-buttons">
+      <button class="error-btn" onclick="errorBtnClick(this)">OK</button>
+      <button class="error-btn" onclick="errorBtnClick(this)">Cancel</button>
+      <button class="error-btn" onclick="errorBtnClick(this)">Retry</button>
+    </div>
+  `;
+  desktop.appendChild(dlg);
+
+  showClippy();
+
+  if (state.stability <= 0) triggerBSOD();
+}
+
+function errorBtnClick(btn) {
+  const dlg = btn.closest('.error-dialog');
+  if (Math.random() < 0.4) {
+    spawnError("You clicked '" + btn.textContent + "'. That was the wrong choice.");
+    dlg.remove();
+  } else if (Math.random() < 0.3) {
+    spawnError("The '" + btn.textContent + "' button has encountered an error.");
+  } else {
+    dlg.remove();
+    if (Math.random() < 0.2) {
+      setTimeout(() => spawnError("Wait, that error wasn't done yet."), 800);
+    }
+  }
+}
+
+// ═══════════════ BSOD ═══════════════
+function triggerBSOD() {
+  state.bsodCount++;
+  const bsod = document.getElementById('bsod');
+  const extras = [
+    "Collecting error data... done\nDumping physical memory to /dev/null...",
+    "Beginning dump of your hopes and dreams...\n[|||||||||||] 100% complete",
+    "System uptime: not long enough\nNumber of errors: yes",
+  ];
+  document.getElementById('bsod-extra').textContent = pick(extras);
+  bsod.style.display = 'block';
+
+  playBSODSound();
+
+  if (state.bsodCount >= 3) {
+    setTimeout(() => triggerGameOver(), 3000);
+    return;
+  }
+
+  const handler = () => {
+    bsod.style.display = 'none';
+    state.stability = Math.max(30, 100 - state.bsodCount * 25);
+    bsod.removeEventListener('click', handler);
+    document.removeEventListener('keydown', handler);
+  };
+  bsod.addEventListener('click', handler);
+  document.addEventListener('keydown', handler, { once: true });
+}
+
+function playBSODSound() {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain); gain.connect(ctx.destination);
+    osc.frequency.value = 150;
+    osc.type = 'sawtooth';
+    gain.gain.value = 0.15;
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 1.5);
+    osc.start(); osc.stop(ctx.currentTime + 1.5);
+  } catch(e) {}
+}
+
+// ═══════════════ GAME OVER ═══════════════
+function triggerGameOver() {
+  state.gameOver = true;
+  document.getElementById('bsod').style.display = 'none';
+
+  const elapsed = Math.floor((Date.now() - state.startTime) / 1000);
+  document.getElementById('go-time').textContent = elapsed;
+  document.getElementById('go-errors').textContent = state.errorCount;
+  document.getElementById('go-bsods').textContent = state.bsodCount;
+
+  const ratings = ['F---', 'F--', 'F-', 'F', 'F+', 'D-', 'D', 'D+', 'C-'];
+  const rIdx = Math.min(ratings.length - 1, Math.floor(elapsed / 30));
+  document.getElementById('go-rating').textContent = ratings[rIdx];
+
+  document.getElementById('gameover').style.display = 'flex';
+}
+
+// ═══════════════ CLIPPY ═══════════════
+function showClippy() {
+  const clippy = document.getElementById('clippy');
+  const text = document.getElementById('clippy-text');
+  text.textContent = pick(clippyMessages);
+  clippy.style.display = 'block';
+  clearTimeout(state.clippyTimeout);
+  state.clippyTimeout = setTimeout(() => {
+    clippy.style.display = 'none';
+  }, 5000);
+}
+
+document.getElementById('clippy').addEventListener('click', () => {
+  if (shouldError()) {
+    spawnError("Clippy has encountered an error. Even Clippy isn't safe.");
+  } else {
+    document.getElementById('clippy-text').textContent = pick(clippyMessages);
+  }
+});
+
+// ═══════════════ APP WINDOWS ═══════════════
+function openApp(action) {
+  if (state.gameOver) return;
+  if (shouldError()) { spawnError(); return; }
+
+  switch(action) {
+    case 'mycomputer': openMyComputer(); break;
+    case 'recyclebin': openRecycleBin(); break;
+    case 'notepad': openNotepad(); break;
+    case 'paint': openPaint(); break;
+    case 'internet': openInternet(); break;
+    case 'calculator': openCalculator(); break;
+    case 'documents': openDocuments(); break;
+    case 'help': openHelp(); break;
+    case 'settings': openSettings(); break;
+    case 'find': openFind(); break;
+    case 'programs': openPrograms(); break;
+    case 'shutdown': openShutdown(); break;
+    default: spawnError(`Unknown program: ${action}.exe has stopped working.`);
+  }
+}
+
+function openMyComputer() {
+  const drives = `
+    <div class="file-grid">
+      <div class="file-item" onclick="if(Math.random()<0.5){spawnError('Drive C: has feelings and doesn\\'t want to be opened.')}else{spawnError('Access denied. This is MY computer, not yours.')}">
+        <div class="file-icon">💾</div>C: Drive
+      </div>
+      <div class="file-item" onclick="spawnError('Drive D: doesn\\'t exist. It never did. You imagined it.')">
+        <div class="file-icon">💿</div>D: Drive
+      </div>
+      <div class="file-item" onclick="spawnError('The floppy drive is a portal to 1995. You are not ready.')">
+        <div class="file-icon">💽</div>A: Floppy
+      </div>
+      <div class="file-item" onclick="spawnError('Network drive disconnected. The network is on a coffee break.')">
+        <div class="file-icon">🌐</div>Z: Network
+      </div>
+    </div>`;
+  createWindow('My Computer', '💻', drives, 350, 250);
+}
+
+function openRecycleBin() {
+  const content = `<div class="recycle-msg">
+    <p style="font-size:40px;margin-bottom:12px">🗑️</p>
+    <p><b>Recycle Bin contains:</b></p>
+    <p>• Your productivity (3.2 GB)</p>
+    <p>• Time you'll never get back (∞ GB)</p>
+    <p>• hope.exe (0 bytes)</p>
+    <p>• system_stability.dll (corrupted)</p>
+    <br>
+    <button class="error-btn" onclick="spawnError('Cannot empty Recycle Bin. It empties you.')">Empty Recycle Bin</button>
+    <button class="error-btn" onclick="spawnError('You cannot restore what was never there.')">Restore All</button>
+  </div>`;
+  createWindow('Recycle Bin', '🗑️', content, 320, 300);
+}
+
+function openNotepad() {
+  const placeholders = [
+    "Dear Diary, the computer hates me again...",
+    "TODO:\n1. Fix computer\n2. Give up\n3. See step 2",
+    "HELP ME I AM TRAPPED IN A WINDOZE SIMULATOR",
+    "If you're reading this, it's too late.",
+    "Note to self: clicking things was a mistake",
+  ];
+  const w = createWindow('Notepad', '📝',
+    `<textarea class="notepad-content" placeholder="${pick(placeholders)}" spellcheck="false"></textarea>`,
+    400, 300);
+  if (w) {
+    const ta = w.el.querySelector('textarea');
+    ta.addEventListener('keydown', () => {
+      if (Math.random() < 0.08) {
+        spawnError("Notepad has encountered a keystroke it doesn't agree with.");
+      }
+    });
+    // Random text corruption
+    setInterval(() => {
+      if (ta.value.length > 20 && Math.random() < 0.15 && !state.gameOver) {
+        const pos = randInt(0, ta.value.length - 1);
+        const corruptChars = '█▓░▒╔╗╚╝║═☺☻♥♦♣♠';
+        ta.value = ta.value.substring(0, pos) + pick(corruptChars.split('')) + ta.value.substring(pos + 1);
+      }
+    }, 3000);
+  }
+}
+
+function openPaint() {
+  const w = createWindow('Paint', '🎨',
+    `<canvas class="paint-canvas" width="380" height="250"></canvas>`,
+    420, 310);
+  if (w) {
+    const canvas = w.el.querySelector('canvas');
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = 'white';
+    ctx.fillRect(0, 0, 380, 250);
+    ctx.strokeStyle = '#000';
+    ctx.lineWidth = 2;
+    ctx.lineCap = 'round';
+    let drawing = false;
+    canvas.addEventListener('mousedown', (e) => {
+      if (shouldError()) { spawnError("The paint brush has dried up. In a digital program. Don't question it."); return; }
+      drawing = true;
+      ctx.beginPath();
+      ctx.moveTo(e.offsetX, e.offsetY);
+    });
+    canvas.addEventListener('mousemove', (e) => {
+      if (!drawing) return;
+      // Random color changes
+      if (Math.random() < 0.05) {
+        ctx.strokeStyle = `hsl(${randInt(0,360)}, 100%, 50%)`;
+      }
+      ctx.lineTo(e.offsetX, e.offsetY);
+      ctx.stroke();
+    });
+    canvas.addEventListener('mouseup', () => { drawing = false; });
+    canvas.addEventListener('mouseleave', () => { drawing = false; });
+    // Random "glitches" on the canvas
+    setInterval(() => {
+      if (Math.random() < 0.1 && !state.gameOver) {
+        const x = randInt(0, 360); const y = randInt(0, 230);
+        ctx.fillStyle = `hsl(${randInt(0,360)}, 100%, 50%)`;
+        ctx.fillRect(x, y, randInt(5, 30), randInt(5, 30));
+      }
+    }, 4000);
+  }
+}
+
+function openInternet() {
+  const content = `
+    <div style="padding:12px;text-align:center;">
+      <div style="background:#eee;border:2px inset #999;padding:4px 8px;margin-bottom:12px;text-align:left;font-size:12px;">
+        🌐 http://www.definitely-real-internet.com
+      </div>
+      <div class="loading-bar-container"><div class="loading-bar" id="inet-bar"></div></div>
+      <div class="loading-text" id="inet-status">Connecting to the internet...</div>
+      <div id="inet-content" style="margin-top:16px;display:none;">
+        <p style="font-size:16px;font-weight:bold;margin-bottom:8px;">🌐 The Internet</p>
+        <p style="font-size:13px;color:#555;">Welcome to the World Wide Web!</p>
+        <p style="font-size:12px;color:#888;margin-top:8px;">Page loaded in: ${randInt(45000,99000)}ms</p>
+        <br>
+        <button class="error-btn" onclick="spawnError('Your internet connection has been lost. It was last seen heading north.')">🔍 Search</button>
+        <button class="error-btn" onclick="spawnError('Email server not found. Your emails have been forwarded to the void.')">📧 Email</button>
+        <button class="error-btn" onclick="spawnError('Download failed: the file downloaded itself to a parallel universe.')">⬇️ Download</button>
+      </div>
+    </div>`;
+  const w = createWindow('Internet Explorer', '🌐', content, 420, 320);
+  if (w) {
+    let progress = 0;
+    const bar = w.el.querySelector('#inet-bar');
+    const status = w.el.querySelector('#inet-status');
+    const msgs = [
+      'Looking up DNS...', 'Negotiating with server...', 'Server is thinking...',
+      'Downloading the internet...', 'Almost there (lying)...', 'Buffering your patience...',
+      'Asking politely for data...', 'Bribing the router...'
+    ];
+    const iv = setInterval(() => {
+      if (state.gameOver) { clearInterval(iv); return; }
+      progress += randInt(3, 15);
+      if (Math.random() < 0.15) { progress -= randInt(5, 20); progress = Math.max(0, progress); }
+      bar.style.width = Math.min(progress, 100) + '%';
+      status.textContent = pick(msgs);
+      if (progress >= 100) {
+        clearInterval(iv);
+        status.textContent = 'Page loaded! (A miracle occurred)';
+        w.el.querySelector('#inet-content').style.display = 'block';
+      }
+    }, 500);
+  }
+}
+
+function openCalculator() {
+  const content = `
+    <div class="calculator">
+      <div class="calc-display" id="calc-display">0</div>
+      <div class="calc-buttons">
+        <button class="calc-btn" onclick="calcInput('7')">7</button>
+        <button class="calc-btn" onclick="calcInput('8')">8</button>
+        <button class="calc-btn" onclick="calcInput('9')">9</button>
+        <button class="calc-btn" onclick="calcInput('/')">÷</button>
+        <button class="calc-btn" onclick="calcInput('4')">4</button>
+        <button class="calc-btn" onclick="calcInput('5')">5</button>
+        <button class="calc-btn" onclick="calcInput('6')">6</button>
+        <button class="calc-btn" onclick="calcInput('*')">×</button>
+        <button class="calc-btn" onclick="calcInput('1')">1</button>
+        <button class="calc-btn" onclick="calcInput('2')">2</button>
+        <button class="calc-btn" onclick="calcInput('3')">3</button>
+        <button class="calc-btn" onclick="calcInput('-')">−</button>
+        <button class="calc-btn" onclick="calcInput('0')">0</button>
+        <button class="calc-btn" onclick="calcInput('.')">.</button>
+        <button class="calc-btn" onclick="calcEquals()">=</button>
+        <button class="calc-btn" onclick="calcInput('+')">+</button>
+        <button class="calc-btn" onclick="calcClear()" style="grid-column:span 4;background:#e88;">C</button>
+      </div>
+    </div>`;
+  createWindow('Calculator', '🧮', content, 260, 320);
+}
+
+let calcStr = '';
+function calcInput(ch) {
+  if (shouldError()) { spawnError("The calculator cannot count that high. Or that low. Or at all."); return; }
+  calcStr += ch;
+  const disp = document.getElementById('calc-display');
+  if (disp) disp.textContent = calcStr;
+}
+function calcEquals() {
+  const disp = document.getElementById('calc-display');
+  if (!disp) return;
+  if (shouldError()) {
+    const wrongAnswers = ['42', 'NaN', 'undefined', '💀', 'no', 'maybe', '∞', '-∞', 'fish', 'Error: math broke'];
+    disp.textContent = pick(wrongAnswers);
+    calcStr = '';
+    return;
+  }
+  try {
+    let result = eval(calcStr);
+    // Randomly give wrong answers
+    if (Math.random() < 0.35) {
+      result = result + randInt(-10, 10);
+      if (result === eval(calcStr)) result += 1; // ensure it's wrong
+    }
+    disp.textContent = result;
+    calcStr = String(result);
+  } catch(e) {
+    disp.textContent = 'MATH IS BROKEN';
+    calcStr = '';
+  }
+}
+function calcClear() {
+  if (shouldError()) { spawnError("The clear button is unclear about what to clear."); return; }
+  calcStr = '';
+  const disp = document.getElementById('calc-display');
+  if (disp) disp.textContent = '0';
+}
+
+function openDocuments() {
+  const files = [
+    { icon: '📄', name: 'budget.xls', err: "This spreadsheet contains your budget. It's all zeros. That's correct." },
+    { icon: '📄', name: 'resume.doc', err: "Skills: clicking things. Weaknesses: also clicking things." },
+    { icon: '📁', name: 'Secrets', err: "ACCESS DENIED. Nice try though." },
+    { icon: '📄', name: 'todo.txt', err: "Todo: Fix computer. Status: lol" },
+    { icon: '🖼️', name: 'photo.jpg', err: "This image is too powerful to be displayed." },
+    { icon: '📄', name: 'passwords.txt', err: "All your passwords have been changed to 'password'. You're welcome." },
+    { icon: '🎵', name: 'song.mp3', err: "Cannot play audio: your speakers have filed a noise complaint." },
+    { icon: '📄', name: 'readme.txt', err: "This file is write-only. You can write to it but never read it." },
+  ];
+  let html = '<div class="file-grid">';
+  files.forEach(f => {
+    html += `<div class="file-item" onclick="spawnError('${f.err.replace(/'/g, "\\'")}')">
+      <div class="file-icon">${f.icon}</div>${f.name}</div>`;
+  });
+  html += '</div>';
+  createWindow('My Documents', '📁', html, 380, 280);
+}
+
+function openHelp() {
+  createWindow('Help', '❓', helpContent, 420, 380);
+  if (Math.random() < 0.5) {
+    setTimeout(() => spawnError("Even opening help causes errors. There is no escape."), 1500);
+  }
+}
+
+function openSettings() {
+  const content = `
+    <div class="settings-panel">
+      <p style="font-weight:bold;margin-bottom:8px;">⚙️ System Settings</p>
+      <label>🔊 Volume: <input type="range" value="50" oninput="if(shouldError())spawnError('Volume control has lost control.')"></label>
+      <label>🖥️ Screen brightness: <input type="range" value="80" oninput="if(shouldError()){document.body.style.filter='brightness('+Math.random()+')';spawnError('Brightness module has entered the shadow realm.')}"></label>
+      <label><input type="checkbox" onchange="spawnError('You cannot change what cannot be changed.')"> Enable stability</label>
+      <label><input type="checkbox" checked onchange="spawnError('Errors are a core feature and cannot be disabled.')"> Enable errors</label>
+      <label><input type="checkbox" onchange="spawnError('Nice try. Clippy is eternal.')"> Disable Clippy</label>
+      <br>
+      <button class="error-btn" onclick="spawnError('Settings saved to /dev/null. They will not persist. They never do.')">Save Settings</button>
+      <button class="error-btn" onclick="spawnError('There are no defaults. There is only chaos.')">Reset to Defaults</button>
+    </div>`;
+  createWindow('Settings', '⚙️', content, 340, 320);
+}
+
+function openFind() {
+  const content = `
+    <div style="padding:12px;">
+      <p style="font-weight:bold;margin-bottom:8px;">🔍 Find Files</p>
+      <div style="display:flex;gap:4px;margin-bottom:12px;">
+        <input type="text" style="flex:1;border:2px inset #999;padding:2px 6px;font-size:12px;" placeholder="Search for files..." id="find-input">
+        <button class="error-btn" onclick="doFind()">Find Now</button>
+      </div>
+      <div id="find-results" style="font-size:12px;color:#555;">Type something and click Find Now</div>
+    </div>`;
+  createWindow('Find', '🔍', content, 350, 250);
+}
+
+function doFind() {
+  const input = document.getElementById('find-input');
+  const results = document.getElementById('find-results');
+  if (!input || !results) return;
+  if (shouldError()) { spawnError("Find has lost itself. It cannot find find."); return; }
+  const fakeResults = [
+    'not_your_file.exe', 'definitely_a_virus.bat', 'your_data_lol.zip',
+    'error_log_' + randInt(1,999) + '.txt', 'help_me.sos', 'where_am_i.lost',
+    'system32_backup_backup_backup.dll', 'cookies_nom_nom.dat',
+  ];
+  results.innerHTML = '<p><b>Results for "' + (input.value || '*') + '":</b></p>' +
+    fakeResults.map(f => `<p style="cursor:pointer;margin:2px 0;" onclick="spawnError('Cannot open ${f}: file is on vacation.')">${f}</p>`).join('');
+}
+
+function openPrograms() {
+  const programs = [
+    { name: 'Minesweeper', icon: '💣', err: "Minesweeper has hit a mine. The irony is not lost on us." },
+    { name: 'Solitaire', icon: '🃏', err: "Solitaire is lonely and doesn't want to be opened right now." },
+    { name: 'Defragmenter', icon: '📊', err: "The defragmenter has fragmented itself. How poetic." },
+    { name: 'Command Prompt', icon: '⬛', err: "C:\\> FATAL ERROR: The command prompt has run out of commands." },
+    { name: 'Media Player', icon: '🎵', err: "Media Player can't play media. It can't play anything. It's having an existential crisis." },
+    { name: 'Virus Scanner', icon: '🛡️', err: "Virus Scanner found 847 viruses. Plot twist: the scanner IS the virus." },
+  ];
+  let html = '<div class="file-grid">';
+  programs.forEach(p => {
+    html += `<div class="file-item" onclick="spawnError('${p.err.replace(/'/g, "\\'")}')">
+      <div class="file-icon">${p.icon}</div>${p.name}</div>`;
+  });
+  html += '</div>';
+  createWindow('Programs', '📁', html, 360, 280);
+}
+
+function openShutdown() {
+  const content = `
+    <div style="padding:20px;text-align:center;">
+      <p style="font-size:14px;margin-bottom:16px;">Are you sure you want to shut down?</p>
+      <button class="error-btn" onclick="spawnError('DENIED. You cannot leave. You live here now.')">Shut Down</button>
+      <button class="error-btn" onclick="spawnError('Restarting... just kidding. Nothing happens.')">Restart</button>
+      <button class="error-btn" onclick="closeWindow(${state.windowIdCounter + 1})">Cancel</button>
+    </div>`;
+  createWindow('Shut Down Windoze', '🔌', content, 300, 160);
+}
+
+// ═══════════════ DESKTOP SETUP ═══════════════
+function setupDesktop() {
+  const desktop = document.getElementById('desktop');
+  desktopIcons.forEach(di => {
+    const el = document.createElement('div');
+    el.className = 'desktop-icon';
+    el.style.left = di.x + 'px';
+    el.style.top = di.y + 'px';
+    el.innerHTML = `<span class="icon-img">${di.icon}</span><span class="icon-label">${di.label}</span>`;
+    el.addEventListener('dblclick', () => openApp(di.action));
+    el.addEventListener('touchend', (e) => {
+      e.preventDefault();
+      if (el._lastTap && Date.now() - el._lastTap < 400) openApp(di.action);
+      el._lastTap = Date.now();
+    });
+    desktop.appendChild(el);
+  });
+}
+
+// ═══════════════ START MENU ═══════════════
+document.getElementById('start-btn').addEventListener('click', () => {
+  const menu = document.getElementById('start-menu');
+  menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
+  if (shouldError()) setTimeout(() => spawnError("The Start menu has encountered a false start."), 300);
+});
+
+document.querySelectorAll('.menu-item').forEach(item => {
+  item.addEventListener('click', () => {
+    document.getElementById('start-menu').style.display = 'none';
+    openApp(item.dataset.action);
+  });
+});
+
+// Close start menu on outside click
+document.addEventListener('click', (e) => {
+  if (!e.target.closest('#start-menu') && !e.target.closest('#start-btn')) {
+    document.getElementById('start-menu').style.display = 'none';
+  }
+});
+
+// ═══════════════ RANDOM EVENTS ═══════════════
+function randomChaos() {
+  if (state.gameOver) return;
+  const events = [
+    () => spawnError(),
+    () => showClippy(),
+    () => {
+      // Random window appears
+      const titles = ['Updating...', 'Installing drivers...', 'virus_scan.exe', 'Checking for updates...'];
+      const content = `<div style="padding:20px;text-align:center;">
+        <div class="loading-bar-container"><div class="loading-bar" style="width:${randInt(10,90)}%"></div></div>
+        <p style="font-size:12px;margin-top:8px;">${pick(titles)}</p>
+        <p style="font-size:11px;color:#888;margin-top:4px;">Please do not turn off your computer (not that you can)</p>
+      </div>`;
+      createWindow(pick(titles), '⏳', content, 300, 160);
+    },
+    () => {
+      // Desktop icon shuffle
+      document.querySelectorAll('.desktop-icon').forEach(icon => {
+        icon.style.left = randInt(20, 200) + 'px';
+        icon.style.top = randInt(20, 500) + 'px';
+      });
+      spawnError("Your desktop icons have rearranged themselves. They do that sometimes.");
+    },
+    () => {
+      // Brief screen color glitch
+      document.getElementById('desktop').style.background = `hsl(${randInt(0,360)}, 50%, 30%)`;
+      setTimeout(() => {
+        document.getElementById('desktop').style.background = 'var(--win-bg)';
+      }, 1000);
+    },
+  ];
+  pick(events)();
+}
+
+// ═══════════════ GAME LOOP ═══════════════
+function startGame() {
+  state.started = true;
+  state.startTime = Date.now();
+  state.errorCount = 0;
+  state.bsodCount = 0;
+  state.stability = 100;
+  state.errorChance = 0.3;
+  state.windows = [];
+  state.windowIdCounter = 0;
+  state.zCounter = 100;
+  state.gameOver = false;
+  state.errorEscalation = 0;
+
+  document.getElementById('start-screen').style.display = 'none';
+  document.getElementById('desktop').style.display = 'block';
+  document.getElementById('taskbar').style.display = 'flex';
+  document.getElementById('bsod').style.display = 'none';
+  document.getElementById('gameover').style.display = 'none';
+  document.getElementById('clippy').style.display = 'none';
+  document.body.style.filter = '';
+
+  // Clear desktop windows
+  document.querySelectorAll('.window, .error-dialog').forEach(el => el.remove());
+
+  setupDesktop();
+  playStartupSound();
+  updateClock();
+  setInterval(updateClock, 30000);
+
+  // Show clippy after a bit
+  setTimeout(() => showClippy(), 3000);
+
+  // Random chaos events
+  function chaosLoop() {
+    if (state.gameOver) return;
+    const delay = Math.max(3000, 15000 - state.errorEscalation * 800);
+    setTimeout(() => {
+      randomChaos();
+      chaosLoop();
+    }, delay + randInt(0, 5000));
+  }
+  chaosLoop();
+
+  // Escalate difficulty
+  setInterval(() => {
+    if (!state.gameOver) {
+      state.errorEscalation += 0.5;
+    }
+  }, 10000);
+}
+
+// ═══════════════ EVENT HANDLERS ═══════════════
+document.getElementById('start-screen').addEventListener('click', startGame);
+
+document.getElementById('restart-btn').addEventListener('click', () => {
+  document.getElementById('gameover').style.display = 'none';
+  startGame();
+});
+
+// Desktop right-click
+document.getElementById('desktop').addEventListener('contextmenu', (e) => {
+  e.preventDefault();
+  if (shouldError()) spawnError("Right-click is a privilege, not a right. Access denied.");
+});
+</script>
+</body>
+</html>
