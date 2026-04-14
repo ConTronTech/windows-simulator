@@ -203,6 +203,33 @@ body{font-family:'Segoe UI','MS Sans Serif',Arial,sans-serif;overflow:hidden;wid
 .wallpaper-opt{width:40px;height:30px;border:2px inset var(--d);cursor:pointer}
 .wallpaper-opt:hover{border-color:var(--b)}
 .wallpaper-opt.selected{border:2px solid var(--b)}
+
+/* RESOURCE SYSTEM */
+#resource-bar{display:flex;gap:8px;align-items:center;margin-right:6px;font-size:10px;font-family:'Courier New',monospace}
+.res-meter{display:flex;align-items:center;gap:2px;cursor:pointer}
+.res-meter .res-label{color:#000;font-weight:700;font-size:9px}
+.res-meter .res-bar-outer{width:40px;height:10px;background:#fff;border:1px inset #999;overflow:hidden}
+.res-meter .res-bar-inner{height:100%;transition:width .5s;background:#2ecc71}
+.res-meter .res-bar-inner.warn{background:#f39c12}
+.res-meter .res-bar-inner.crit{background:#e74c3c}
+.res-meter .res-val{font-size:9px;min-width:26px;text-align:right}
+
+/* TASK MANAGER */
+.taskmgr{font-size:11px}
+.taskmgr-tabs{display:flex;border-bottom:2px solid var(--d);margin-bottom:4px}
+.taskmgr-tab{padding:3px 10px;font-size:11px;cursor:pointer;border:2px outset var(--l);border-bottom:none;margin-right:1px;background:var(--g)}
+.taskmgr-tab.active{background:#fff;border-bottom:2px solid #fff;margin-bottom:-2px;position:relative}
+.taskmgr-procs{max-height:200px;overflow-y:auto;border:2px inset var(--d);background:#fff}
+.taskmgr-procs table{width:100%;border-collapse:collapse;font-size:10px}
+.taskmgr-procs th{background:#ddd;padding:2px 4px;text-align:left;position:sticky;top:0;cursor:pointer;font-size:10px}
+.taskmgr-procs td{padding:2px 4px;border-bottom:1px solid #eee}
+.taskmgr-procs tr:hover{background:#e0e0ff}
+.taskmgr-procs tr.selected{background:#0000aa;color:#fff}
+.taskmgr-perf{padding:8px}
+.perf-graph{width:100%;height:80px;background:#000;border:2px inset var(--d);margin:4px 0;position:relative;overflow:hidden}
+.perf-graph canvas{width:100%;height:100%}
+.perf-stat{display:flex;justify-content:space-between;font-size:10px;padding:1px 0}
+
 </style>
 </head>
 <body>
@@ -229,7 +256,7 @@ body{font-family:'Segoe UI','MS Sans Serif',Arial,sans-serif;overflow:hidden;wid
 <div id="taskbar">
   <button id="start-btn"><span style="font-size:18px">🪟</span> Start</button>
   <div id="taskbar-items"></div>
-  <div id="systray">
+  <div id="resource-bar"><div class="res-meter" onclick="openTaskManager()" title="CPU Usage"><span class="res-label">CPU</span><div class="res-bar-outer"><div class="res-bar-inner" id="res-cpu-bar"></div></div><span class="res-val" id="res-cpu-val">0%</span></div><div class="res-meter" onclick="openTaskManager()" title="RAM Usage"><span class="res-label">RAM</span><div class="res-bar-outer"><div class="res-bar-inner" id="res-ram-bar"></div></div><span class="res-val" id="res-ram-val">0%</span></div><div class="res-meter" onclick="openTaskManager()" title="Disk Usage"><span class="res-label">DSK</span><div class="res-bar-outer"><div class="res-bar-inner" id="res-disk-bar"></div></div><span class="res-val" id="res-disk-val">0%</span></div></div><div id="systray">
     <span class="systray-icon" onclick="systrayClick('volume')">🔊<span class="systray-tooltip">Volume: 50%</span></span>
     <span class="systray-icon" onclick="systrayClick('network')">🌐<span class="systray-tooltip">Network: Connected (barely)</span></span>
     <span class="systray-icon" onclick="systrayClick('antivirus')">🛡️<span class="systray-tooltip" id="systray-av">Norton: 0 threats</span></span>
@@ -457,7 +484,200 @@ const S = {
   phaseErrorChance:[0.08,0.16,0.28,0.42,0.58],
   updateActive:false, cursorChaosActive:false, cursorMode:'normal',
   trailDots:[], booting:false,
+  // RESOURCE SYSTEM
+  cpu:5, ram:18, disk:22, // percentage used (0-100)
+  cpuHistory:[], ramHistory:[], diskHistory:[],
+  temp:35, // CPU temperature
 };
+
+// ═══════════════ PROCESS SYSTEM ═══════════════
+let processIdCounter = 0;
+const processes = [];
+
+// Process definition: {pid, name, cpu, ram, disk, type, killable, interval, desc}
+function spawnProcess(name, cpu, ram, disk, opts={}) {
+  const p = {
+    pid: ++processIdCounter,
+    name: name,
+    cpu: cpu,       // CPU usage per tick (percentage points)
+    ram: ram,       // RAM usage (flat, added once)
+    disk: disk,     // Disk I/O per tick
+    type: opts.type || 'system',  // system, app, malware, helper
+    killable: opts.killable !== undefined ? opts.killable : true,
+    desc: opts.desc || '',
+    started: Date.now(),
+    status: 'Running',
+    windowId: opts.windowId || null,
+  };
+  processes.push(p);
+  S.ram = Math.min(98, S.ram + ram);
+  return p;
+}
+
+function killProcess(pid) {
+  const idx = processes.findIndex(p => p.pid === pid);
+  if (idx < 0) return false;
+  const p = processes[idx];
+  if (!p.killable) return false;
+  // Reclaim RAM
+  S.ram = Math.max(2, S.ram - p.ram);
+  processes.splice(idx, 1);
+  return true;
+}
+
+function getProcessCPU() {
+  let total = 3; // base system idle
+  processes.forEach(p => { total += p.cpu; });
+  return Math.min(99, total);
+}
+
+function getProcessDisk() {
+  let total = 1;
+  processes.forEach(p => { total += p.disk; });
+  return Math.min(99, total);
+}
+
+// System processes that always run
+function spawnSystemProcesses() {
+  spawnProcess('System Idle', 0, 1, 0, {type:'system', killable:false, desc:'System idle process'});
+  spawnProcess('csrss.exe', 0.5, 2, 0, {type:'system', killable:false, desc:'Client/Server Runtime'});
+  spawnProcess('explorer.exe', 1, 8, 0.5, {type:'system', killable:true, desc:'Windows Explorer'});
+  spawnProcess('svchost.exe', 0.8, 3, 0, {type:'system', killable:false, desc:'Service Host'});
+  spawnProcess('svchost.exe', 0.3, 2, 0, {type:'system', killable:false, desc:'Service Host (Network)'});
+  spawnProcess('svchost.exe', 0.5, 4, 0, {type:'system', killable:false, desc:'Service Host (Local)'});
+  spawnProcess('dwm.exe', 0.5, 3, 0, {type:'system', killable:true, desc:'Desktop Window Manager'});
+  spawnProcess('lsass.exe', 0.2, 2, 0, {type:'system', killable:false, desc:'Local Security Authority'});
+  spawnProcess('winlogon.exe', 0.1, 1, 0, {type:'system', killable:false, desc:'Windows Logon'});
+  spawnProcess('spoolsv.exe', 0.1, 1, 0.2, {type:'system', killable:true, desc:'Print Spooler'});
+}
+
+// Malware/bloat that spawns over time
+const bloatware = [
+  {name:'adobe_updater.exe', cpu:3, ram:6, disk:2, desc:'Adobie Update Service', phase:0},
+  {name:'norton_scan.exe', cpu:8, ram:12, disk:4, desc:'Norton Full System Scan', phase:1},
+  {name:'edge_helper.exe', cpu:2, ram:5, disk:1, desc:'Microsoft Edgé Helper', phase:0},
+  {name:'mcafee_rt.exe', cpu:5, ram:8, disk:2, desc:'McAfee Real-Time Scan', phase:1},
+  {name:'itunes_helper.exe', cpu:2, ram:7, disk:3, desc:'iTunez Background Service', phase:1},
+  {name:'windows_update.exe', cpu:6, ram:4, disk:8, desc:'Windoze Update Agent', phase:2},
+  {name:'cortana.exe', cpu:4, ram:6, disk:1, desc:'Cortana (nobody asked)', phase:2},
+  {name:'onedrive.exe', cpu:3, ram:5, disk:5, desc:'OneDrive Sync', phase:1},
+  {name:'telemetry.exe', cpu:2, ram:3, disk:3, desc:'Windoze Telemetry (spying)', phase:2},
+  {name:'superfetch.exe', cpu:4, ram:8, disk:6, desc:'Superfetch (prefetching errors)', phase:2},
+  {name:'searchindexer.exe', cpu:5, ram:4, disk:7, desc:'Search Indexer (indexing pain)', phase:3},
+  {name:'wuauclt.exe', cpu:3, ram:3, disk:4, desc:'Update Auto-Download', phase:3},
+  {name:'cryptominer.exe', cpu:15, ram:4, disk:1, desc:'Definitely Not A Miner', phase:3},
+  {name:'toolbar_helper.exe', cpu:3, ram:5, disk:2, desc:'Ask Toolbar Background', phase:3},
+  {name:'bonzi_buddy.exe', cpu:6, ram:8, disk:3, desc:'BonziBuddy Lives On', phase:4},
+];
+
+function maybeSpawnBloat() {
+  if (S.gameOver || S.booting) return;
+  const eligible = bloatware.filter(b => 
+    S.phase >= b.phase && !processes.find(p => p.name === b.name)
+  );
+  if (eligible.length === 0) return;
+  if (Math.random() < 0.3 + S.phase * 0.1) {
+    const b = pick(eligible);
+    spawnProcess(b.name, b.cpu, b.ram, b.disk, {type:'malware', killable:true, desc:b.desc});
+    if (S.phase >= 2) {
+      SFX.notify();
+    }
+  }
+}
+
+// ═══════════════ RESOURCE TICK ═══════════════
+function resourceTick() {
+  if (S.gameOver || !S.started || S.booting) return;
+
+  // Calculate CPU from running processes
+  S.cpu = getProcessCPU();
+  S.disk = getProcessDisk();
+  // RAM stays as accumulated from processes
+
+  // Phase-based passive resource pressure
+  const phasePressure = [0, 0.3, 0.6, 1.0, 1.5];
+  const pp = phasePressure[Math.min(S.phase, 4)];
+  S.ram = Math.min(98, S.ram + pp * 0.1);
+  S.disk = Math.min(98, S.disk + pp * 0.15);
+
+  // Temperature from CPU usage
+  S.temp = 35 + (S.cpu * 0.5) + (S.phase * 3);
+  if (S.temp > 90) S.temp += randInt(0, 5); // thermal runaway
+
+  // Track history for performance graphs
+  S.cpuHistory.push(S.cpu);
+  S.ramHistory.push(S.ram);
+  S.diskHistory.push(S.disk);
+  if (S.cpuHistory.length > 60) S.cpuHistory.shift();
+  if (S.ramHistory.length > 60) S.ramHistory.shift();
+  if (S.diskHistory.length > 60) S.diskHistory.shift();
+
+  // Update resource bars in taskbar
+  updateResourceBars();
+
+  // ── CONSEQUENCES ──
+  // High CPU = lag/errors
+  if (S.cpu > 85 && Math.random() < 0.15) {
+    spawnError(pick(['System is running slow...', 'CPU overloaded!', 'Process not responding.', 'High CPU usage detected.']));
+  }
+  if (S.cpu > 95 && Math.random() < 0.25) {
+    screenShake();
+  }
+
+  // High RAM = freezes/crashes
+  if (S.ram > 90 && Math.random() < 0.12) {
+    spawnError(pick(['Out of memory!', 'Low memory warning.', 'Virtual memory exhausted.', 'RAM is full of regrets.']));
+  }
+  if (S.ram > 95 && Math.random() < 0.15) {
+    triggerBSOD();
+    return;
+  }
+
+  // High Disk = corruption
+  if (S.disk > 85 && Math.random() < 0.1) {
+    spawnError(pick(['Disk I/O error!', 'Read/write failure.', 'Disk is thrashing.', 'File system corrupted.']));
+  }
+  if (S.disk > 95 && Math.random() < 0.12) {
+    triggerBSOD();
+    return;
+  }
+
+  // Temperature warnings
+  if (S.temp > 85 && Math.random() < 0.1) {
+    spawnError(pick(['CPU temperature critical!', 'Thermal throttling engaged.', 'Your CPU is sweating.', 'Fan speed: MAXIMUM']));
+  }
+  if (S.temp > 100 && Math.random() < 0.2) {
+    triggerBSOD();
+    return;
+  }
+
+  // Update stability based on resources (replaces old random system)
+  const resourceStress = (S.cpu + S.ram + S.disk) / 3;
+  if (resourceStress > 70) {
+    S.stability -= (resourceStress - 70) * 0.02;
+  }
+  if (S.stability <= 0) {
+    triggerBSOD();
+    return;
+  }
+
+  // Spawn bloatware periodically
+  maybeSpawnBloat();
+}
+
+function updateResourceBars() {
+  const bars = [
+    {id:'cpu', val:S.cpu}, {id:'ram', val:S.ram}, {id:'disk', val:S.disk}
+  ];
+  bars.forEach(b => {
+    const bar = document.getElementById('res-' + b.id + '-bar');
+    const val = document.getElementById('res-' + b.id + '-val');
+    if (!bar || !val) return;
+    bar.style.width = Math.round(b.val) + '%';
+    val.textContent = Math.round(b.val) + '%';
+    bar.className = 'res-bar-inner' + (b.val > 80 ? ' crit' : b.val > 60 ? ' warn' : '');
+  });
+}
 
 function elapsed(){return(Date.now()-S.startTime)/1000;}
 function currentPhase(){const t=elapsed();for(let i=S.phaseThresholds.length-1;i>=0;i--){if(t>=S.phaseThresholds[i])return i;}return 0;}
@@ -845,8 +1065,9 @@ function triggerGameOver(){
   document.getElementById('go-bsods').textContent=S.bsodCount;
   document.getElementById('go-popups').textContent=S.popupsClosed;
   document.getElementById('go-updates').textContent=S.updatesEndured;
-  const r=['F---','F--','F-','F','F+','D-','D','D+','C-','C','C+','B-','B'];
-  document.getElementById('go-rating').textContent=r[Math.min(r.length-1,Math.floor(t/20))];
+  // Enhanced rating based on survival time
+  const r=['F---','F--','F-','F','F+','D-','D','D+','C-','C','C+','B-','B','B+','A-','A','A+','S','S+','S++'];
+  document.getElementById('go-rating').textContent=r[Math.min(r.length-1,Math.floor(t/15))];
   document.getElementById('gameover').style.display='flex';
   SFX.shutdown();
 }
@@ -974,8 +1195,13 @@ function fileAction(path, info) {
   const name = path.split('\\').pop();
   if(name.endsWith('.exe')){
     if(info === 'VIRUS' || info === 'NOT REAL'){
-      spawnError('Running ' + name + '... Congratulations, you now have ' + randInt(3,20) + ' new viruses!');
+      const virusCount = randInt(3,20);
+      spawnError('Running ' + name + '... Congratulations, you now have ' + virusCount + ' new viruses!');
       S.stability -= randInt(5,15);
+      // Actually spawn malware processes!
+      for(let v=0; v<Math.min(virusCount, 3); v++){
+        spawnProcess(pick(['trojan_'+randInt(1,99)+'.exe','worm.exe','keylogger.exe','cryptominer.exe','adware_'+randInt(1,99)+'.exe']), randInt(2,8), randInt(3,8), randInt(1,4), {type:'malware', killable:true, desc:'Virus from ' + name});
+      }
       if(S.phase >= 2) setTimeout(spawnPopupAd, 500);
     } else if(info === 'CANNOT BE DELETED'){
       spawnError('mcafee.exe is running. mcafee.exe is always running. mcafee.exe cannot be stopped.');
@@ -1179,7 +1405,14 @@ function openDefrag(){
       const st=w.el.querySelector('#defrag-status'),pc=w.el.querySelector('#defrag-pct');
       if(st)st.textContent=pick(['Moving clusters...','Defragmenting...','Rearranging chaos...','Losing fragments...','Questioning existence...']);
       if(pc)pc.textContent=Math.min(pct,100)+'% complete';
-      if(pct>=100){clearInterval(iv);if(st)st.textContent='Done! Disk is now more fragmented.';S.stability-=3;}
+      if(pct>=100){clearInterval(iv);
+          // DEFRAG IS HELPFUL — reduces disk usage!
+          const freed = randInt(8, 18);
+          S.disk = Math.max(5, S.disk - freed);
+          if(st)st.textContent='Defragmentation complete! Freed ' + freed + '% disk space.';
+          if(pc)pc.textContent='Disk usage: ' + Math.round(S.disk) + '%';
+          SFX.notify();
+        }
     },300);
   }
 }
@@ -1222,7 +1455,9 @@ function openShutdown(){createWindow('Shut Down','🔌','<div style="padding:20p
 // ADOBIE READER — It only wants to update
 function openAdobe(){
   const w=createWindow('Adobie Reader DC','🔴','<div class="app-body"><div class="app-logo">🔴</div><h3>Adobie Reader DC v23.847.1</h3><p>Thank you for opening Adobie Reader!</p><p>Before you can do anything, we need to update.</p><div class="progress-fake"><div class="loading-bar-container"><div class="loading-bar" id="adobe-bar" style="width:0%"></div></div><p class="loading-text" id="adobe-status">Checking for updates...</p></div><p style="font-size:10px;color:#999;margin-top:8px">Adobie Reader has been checking for updates since 1993. It has never found them.</p><br><button class="error-btn" onclick="spawnError(\'Adobie must update before it can update.\')">Update Now</button> <button class="error-btn" onclick="spawnError(\'Adobie cannot be used without updating. Adobie cannot update. This is the Adobie paradox.\')">Open PDF</button> <button class="error-btn" onclick="spawnError(\'Remind me later has been scheduled for every 3 minutes forever.\')">Remind Me Later</button></div>',380,380);
-  if(w){let p=0;const iv=setInterval(()=>{if(!document.contains(w.el)){clearInterval(iv);return;}p+=randInt(1,5);if(Math.random()<.2)p=Math.max(0,p-randInt(3,10));const bar=w.el.querySelector('#adobe-bar'),st=w.el.querySelector('#adobe-status');if(!bar){clearInterval(iv);return;}bar.style.width=Math.min(p,99)+'%';const msgs=['Checking for updates...','Downloading update metadata...','Updating the updater...','Preparing to prepare update...','Contacting Adobie servers...','Adobie servers are napping...','Update found! Downloading...','Download failed. Retrying...','Re-checking for updates...'];st.textContent=pick(msgs);if(p>=99){p=0;st.textContent='Update failed. Restarting check...';}},800);}
+  if(w){
+    const adobeProc = spawnProcess('adobe_updater.exe', 3, 6, 2, {type:'malware', killable:true, desc:'Adobie Update Service', windowId:w.id});
+    let p=0;const iv=setInterval(()=>{if(!document.contains(w.el)){clearInterval(iv);killProcess(adobeProc.pid);return;}p+=randInt(1,5);if(Math.random()<.2)p=Math.max(0,p-randInt(3,10));const bar=w.el.querySelector('#adobe-bar'),st=w.el.querySelector('#adobe-status');if(!bar){clearInterval(iv);return;}bar.style.width=Math.min(p,99)+'%';const msgs=['Checking for updates...','Downloading update metadata...','Updating the updater...','Preparing to prepare update...','Contacting Adobie servers...','Adobie servers are napping...','Update found! Downloading...','Download failed. Retrying...','Re-checking for updates...'];st.textContent=pick(msgs);if(p>=99){p=0;st.textContent='Update failed. Restarting check...';adobeProc.disk=Math.min(8,adobeProc.disk+1);}},800);}
 }
 
 // EDGÉ BROWSER — Passive-aggressive guilt trip
@@ -1230,15 +1465,25 @@ function openEdge(){
   const nags=['Make Edgé your default browser?','Edgé is faster than your current browser.','Your current browser is hurting Edgé\'s feelings.','Edgé has been waiting patiently. Please.','Give Edgé a chance. It has changed.','Edgé promises to be better this time.','Your current browser doesn\'t love you like Edgé does.','Edgé is crying. Are you happy now?','PLEASE. Edgé is BEGGING you.','Fine. Edgé will remember this.'];
   let nagIdx=0;
   const w=createWindow('Microsoft Edgé','🌊','<div class="app-body"><div class="app-logo">🌊</div><h3>Welcome to Microsoft Edgé</h3><p>The browser that really, REALLY wants to be your default.</p><div class="edge-nag" id="edge-nag"><p id="edge-nag-text">'+nags[0]+'</p><button class="primary" onclick="spawnError(\'Edgé is now your default browser. And your default everything. You cannot undo this.\')">Yes, make default</button><button onclick="edgeNag()">No thanks</button><button onclick="edgeNag()">Not now</button><button onclick="edgeNag()">Never</button><button onclick="edgeNag()">Stop asking</button></div><p style="font-size:10px;color:#999;margin-top:8px">Edgé will ask again in 30 seconds regardless of your choice.</p><br><button class="error-btn" onclick="spawnError(\'Edgé cannot browse the internet. It can only ask to be your default.\')">Browse Web</button> <button class="error-btn" onclick="spawnError(\'Downloads are only available if Edgé is your default browser.\')">Downloads</button></div>',400,400);
-  if(w){const ni=setInterval(()=>{if(!document.contains(w.el)){clearInterval(ni);return;}SFX.notify();nagIdx=(nagIdx+1)%nags.length;const t=w.el.querySelector('#edge-nag-text');if(t)t.textContent=nags[nagIdx];},8000);}
+  if(w){
+    const edgeProc = spawnProcess('edge_helper.exe', 2, 5, 1, {type:'malware', killable:true, desc:'Edgé Helper Process', windowId:w.id});
+    const ni=setInterval(()=>{if(!document.contains(w.el)){clearInterval(ni);killProcess(edgeProc.pid);return;}SFX.notify();nagIdx=(nagIdx+1)%nags.length;const t=w.el.querySelector('#edge-nag-text');if(t)t.textContent=nags[nagIdx];},8000);}
 }
 function edgeNag(){SFX.error();const nags=["Edgé heard you say no. Edgé doesn't accept no.","That button doesn't work. Try 'Yes'.","Edgé is processing your rejection...","Edgé has filed your 'no' in the recycle bin.","Edgé will ask again. And again. And again.","Did you mean to click 'Yes'? Edgé thinks so."];spawnError(pick(nags));}
 
 // NORTON 360 — The virus pretending to be antivirus
 function openNorton(){
   const w=createWindow('Norton 360°','🛡️','<div class="app-body"><div class="app-logo">🛡️</div><h3>Norton 360° Security Suite</h3><p>Scanning your system for threats...</p><div class="norton-scan" id="norton-log">C:\\> Norton Scan initiated...\nC:\\> Scanning system files...</div><br><p><b>Threats Found: </b><span id="norton-count">0</span></p><p><b>CPU Usage: </b><span id="norton-cpu">47%</span></p><p><b>RAM Usage: </b><span id="norton-ram">2.1 GB</span></p><br><button class="error-btn" onclick="spawnError(\'Norton cannot quarantine threats because Norton IS the threat.\')">Quarantine All</button> <button class="error-btn" onclick="spawnError(\'Your Norton subscription expired in 2003. You still cannot uninstall it.\')">Renew ($299/yr)</button> <button class="error-btn" onclick="spawnError(\'Norton has blocked your attempt to close Norton.\')">Close</button></div>',380,420);
-  if(w){let threats=0;const viruses=['trojan_horse.exe','not_a_virus.bat','your_homework.zip','definitely_legal_movie.avi','free_robux.exe','bitcoin_miner.js','norton_antivirus.exe','clippy_revenge.dll','keyboard_logger.sys','your_browser_history.dat','embarrassing_photo.jpg','save_file_corrupted.sav','existence_is_pain.txt','actual_important_file.doc (false positive)','windows_itself.sys'];
-  const iv=setInterval(()=>{if(!document.contains(w.el)){clearInterval(iv);return;}threats++;const log=w.el.querySelector('#norton-log'),cnt=w.el.querySelector('#norton-count'),cpu=w.el.querySelector('#norton-cpu'),ram=w.el.querySelector('#norton-ram');if(!log){clearInterval(iv);return;}log.textContent+='\nTHREAT FOUND: '+pick(viruses)+' [SEVERITY: '+pick(['LOW','MEDIUM','HIGH','CRITICAL','NUCLEAR','YES'])+']';log.scrollTop=log.scrollHeight;cnt.textContent=threats;cpu.textContent=Math.min(99,47+threats*3)+'%';ram.textContent=(2.1+threats*0.3).toFixed(1)+' GB';if(threats>10&&Math.random()<.3)spawnError('Norton is using more resources than the viruses it found.');S.stability-=1;},1500);}
+  if(w){
+    // Spawn Norton process
+    const nortonProc = spawnProcess('norton_scan.exe', 8, 12, 4, {type:'malware', killable:true, desc:'Norton Full Scan', windowId:w.id});
+    let threats=0;const viruses=['trojan_horse.exe','not_a_virus.bat','your_homework.zip','definitely_legal_movie.avi','free_robux.exe','bitcoin_miner.js','norton_antivirus.exe','clippy_revenge.dll','keyboard_logger.sys','your_browser_history.dat','embarrassing_photo.jpg','save_file_corrupted.sav','existence_is_pain.txt','actual_important_file.doc (false positive)','windows_itself.sys'];
+  const iv=setInterval(()=>{if(!document.contains(w.el)){clearInterval(iv);killProcess(nortonProc.pid);return;}threats++;const log=w.el.querySelector('#norton-log'),cnt=w.el.querySelector('#norton-count'),cpu=w.el.querySelector('#norton-cpu'),ram=w.el.querySelector('#norton-ram');if(!log){clearInterval(iv);return;}log.textContent+='\nTHREAT FOUND: '+pick(viruses)+' [SEVERITY: '+pick(['LOW','MEDIUM','HIGH','CRITICAL','NUCLEAR','YES'])+']';log.scrollTop=log.scrollHeight;cnt.textContent=threats;cpu.textContent=Math.round(S.cpu)+'%';ram.textContent=Math.round(S.ram*0.64)+' MB';if(threats>10&&Math.random()<.3)spawnError('Norton is using more resources than the viruses it found.');
+    // Norton ramps up resource usage over time
+    nortonProc.cpu = Math.min(20, 8 + threats * 0.5);
+    nortonProc.ram = Math.min(25, 12 + threats * 0.8);
+    S.ram = Math.min(98, S.ram + 0.3);
+  },1500);}
 }
 
 // MCAFEE — Impossible to uninstall
@@ -1492,6 +1737,198 @@ document.getElementById('taskbar').addEventListener('contextmenu', e => {
     }},
   ]);
 });
+
+
+// ═══════════════ REAL TASK MANAGER ═══════════════
+let tmgrSelectedPid = null;
+let tmgrWindow = null;
+let tmgrRefreshIv = null;
+let tmgrTab = 'processes';
+
+function openTaskManager() {
+  if (S.gameOver || S.booting) return;
+  SFX.click();
+  const w = createWindow('Task Manager', '📊', '<div class="taskmgr" id="taskmgr-body"></div>', 420, 380);
+  if (!w) return;
+  tmgrWindow = w;
+  tmgrSelectedPid = null;
+  tmgrTab = 'processes';
+  renderTaskManager();
+  // Auto-refresh every 2 seconds
+  if (tmgrRefreshIv) clearInterval(tmgrRefreshIv);
+  tmgrRefreshIv = setInterval(() => {
+    if (!document.contains(w.el)) { clearInterval(tmgrRefreshIv); tmgrRefreshIv = null; return; }
+    renderTaskManager();
+  }, 2000);
+}
+
+function renderTaskManager() {
+  const body = document.getElementById('taskmgr-body');
+  if (!body) return;
+
+  let h = '<div class="taskmgr-tabs">';
+  h += '<div class="taskmgr-tab' + (tmgrTab === 'processes' ? ' active' : '') + '" onclick="tmgrSwitchTab(\'processes\')">Processes</div>';
+  h += '<div class="taskmgr-tab' + (tmgrTab === 'performance' ? ' active' : '') + '" onclick="tmgrSwitchTab(\'performance\')">Performance</div>';
+  h += '</div>';
+
+  if (tmgrTab === 'processes') {
+    h += '<div class="taskmgr-procs"><table><tr><th>Name</th><th style="width:50px">PID</th><th style="width:50px">CPU</th><th style="width:55px">RAM</th><th style="width:50px">Disk</th></tr>';
+    // Sort by CPU desc
+    const sorted = [...processes].sort((a, b) => b.cpu - a.cpu);
+    sorted.forEach(p => {
+      const sel = p.pid === tmgrSelectedPid ? ' selected' : '';
+      const cpuDisp = p.name === 'System Idle' ? Math.max(0, 100 - S.cpu).toFixed(0) : p.cpu.toFixed(1);
+      h += '<tr class="' + sel + '" onclick="tmgrSelect(' + p.pid + ')" ondblclick="tmgrSelect(' + p.pid + ')">';
+      h += '<td>' + p.name + '</td>';
+      h += '<td>' + p.pid + '</td>';
+      h += '<td>' + cpuDisp + '%</td>';
+      h += '<td>' + p.ram + ' MB</td>';
+      h += '<td>' + p.disk.toFixed(1) + '</td>';
+      h += '</tr>';
+    });
+    h += '</table></div>';
+    h += '<div style="padding:6px;display:flex;justify-content:space-between;align-items:center">';
+    h += '<span style="font-size:10px">Processes: ' + processes.length + ' | CPU: ' + Math.round(S.cpu) + '% | RAM: ' + Math.round(S.ram) + '% | Disk: ' + Math.round(S.disk) + '%</span>';
+    h += '<div><button class="error-btn" onclick="tmgrEndTask()" style="background:#fdd">End Task</button></div>';
+    h += '</div>';
+  } else if (tmgrTab === 'performance') {
+    h += '<div class="taskmgr-perf">';
+    h += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">';
+    // CPU
+    h += '<div><div style="font-weight:bold;font-size:10px">CPU Usage: ' + Math.round(S.cpu) + '%</div>';
+    h += '<div class="perf-graph"><canvas id="perf-cpu-cv" width="180" height="80"></canvas></div>';
+    h += '<div class="perf-stat"><span>Temp:</span><span>' + Math.round(S.temp) + '°C</span></div>';
+    h += '<div class="perf-stat"><span>Processes:</span><span>' + processes.length + '</span></div></div>';
+    // RAM
+    h += '<div><div style="font-weight:bold;font-size:10px">Memory: ' + Math.round(S.ram) + '% (' + Math.round(S.ram * 0.64) + '/' + 64 + ' MB)</div>';
+    h += '<div class="perf-graph"><canvas id="perf-ram-cv" width="180" height="80"></canvas></div>';
+    h += '<div class="perf-stat"><span>Available:</span><span>' + Math.round(64 - S.ram * 0.64) + ' MB</span></div>';
+    h += '<div class="perf-stat"><span>Cached:</span><span>' + randInt(4, 16) + ' MB</span></div></div>';
+    h += '</div>';
+    // Disk
+    h += '<div style="margin-top:8px"><div style="font-weight:bold;font-size:10px">Disk Activity: ' + Math.round(S.disk) + '%</div>';
+    h += '<div class="perf-graph" style="height:50px"><canvas id="perf-disk-cv" width="380" height="50"></canvas></div></div>';
+    h += '<div style="margin-top:6px;display:flex;justify-content:space-between;font-size:10px"><span>Uptime: ' + formatUptime() + '</span><span>Stability: ' + Math.round(S.stability) + '%</span></div>';
+    h += '</div>';
+    // Draw graphs after render
+    setTimeout(drawPerfGraphs, 50);
+  }
+
+  body.innerHTML = h;
+  if (tmgrTab === 'performance') setTimeout(drawPerfGraphs, 50);
+}
+
+function formatUptime() {
+  const s = Math.floor(elapsed());
+  const m = Math.floor(s / 60);
+  const sec = s % 60;
+  return m + ':' + String(sec).padStart(2, '0');
+}
+
+function drawPerfGraphs() {
+  drawGraph('perf-cpu-cv', S.cpuHistory, '#00ff00');
+  drawGraph('perf-ram-cv', S.ramHistory, '#0088ff');
+  drawGraph('perf-disk-cv', S.diskHistory, '#ff8800');
+}
+
+function drawGraph(canvasId, data, color) {
+  const cv = document.getElementById(canvasId);
+  if (!cv) return;
+  const ctx = cv.getContext('2d');
+  const w = cv.width, h = cv.height;
+  ctx.fillStyle = '#000';
+  ctx.fillRect(0, 0, w, h);
+  // Grid lines
+  ctx.strokeStyle = '#1a3a1a';
+  ctx.lineWidth = 0.5;
+  for (let y = 0; y < h; y += h/4) {
+    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke();
+  }
+  for (let x = 0; x < w; x += w/6) {
+    ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke();
+  }
+  if (data.length < 2) return;
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  const step = w / (data.length - 1);
+  data.forEach((v, i) => {
+    const x = i * step;
+    const y = h - (v / 100) * h;
+    if (i === 0) ctx.moveTo(x, y);
+    else ctx.lineTo(x, y);
+  });
+  ctx.stroke();
+  // Fill under
+  ctx.lineTo(w, h);
+  ctx.lineTo(0, h);
+  ctx.closePath();
+  ctx.fillStyle = color.replace(')', ',0.1)').replace('rgb', 'rgba').replace('#', '');
+  // Simple fill with alpha
+  ctx.globalAlpha = 0.15;
+  ctx.fillStyle = color;
+  ctx.fill();
+  ctx.globalAlpha = 1.0;
+}
+
+function tmgrSwitchTab(tab) {
+  tmgrTab = tab;
+  renderTaskManager();
+  SFX.click();
+}
+
+function tmgrSelect(pid) {
+  tmgrSelectedPid = pid;
+  renderTaskManager();
+}
+
+function tmgrEndTask() {
+  if (tmgrSelectedPid === null) {
+    spawnError('Select a process first!');
+    return;
+  }
+  const p = processes.find(x => x.pid === tmgrSelectedPid);
+  if (!p) { spawnError('Process not found.'); return; }
+  if (!p.killable) {
+    spawnError(p.name + ' is a critical system process. Killing it would be... bad. (But funny.)');
+    // If they try to kill a critical process, BSOD with a small chance
+    if (Math.random() < 0.3) {
+      setTimeout(() => {
+        spawnError('You killed ' + p.name + '. The system does not appreciate that.');
+        setTimeout(triggerBSOD, 1500);
+      }, 500);
+    }
+    return;
+  }
+  // Kill it
+  if (killProcess(tmgrSelectedPid)) {
+    SFX.notify();
+    tmgrSelectedPid = null;
+    renderTaskManager();
+    // If it was explorer.exe, trouble
+    if (p.name === 'explorer.exe') {
+      spawnError('explorer.exe has been terminated. Desktop going dark...');
+      document.querySelectorAll('.desktop-icon').forEach(i => i.style.visibility = 'hidden');
+      // Respawn after a bit
+      setTimeout(() => {
+        spawnProcess('explorer.exe', 1, 8, 0.5, {type:'system', killable:true, desc:'Windows Explorer'});
+        document.querySelectorAll('.desktop-icon').forEach(i => i.style.visibility = 'visible');
+      }, 5000);
+    }
+    // If it was dwm.exe
+    if (p.name === 'dwm.exe') {
+      spawnError('Desktop Window Manager killed. Windows look ugly now.');
+      document.querySelectorAll('.window').forEach(w => w.style.boxShadow = 'none');
+      setTimeout(() => {
+        spawnProcess('dwm.exe', 0.5, 3, 0, {type:'system', killable:true, desc:'Desktop Window Manager'});
+        document.querySelectorAll('.window').forEach(w => w.style.boxShadow = '2px 2px 8px rgba(0,0,0,.3)');
+      }, 8000);
+    }
+  } else {
+    spawnError('Cannot terminate ' + p.name + '. It refuses to die.');
+  }
+}
+
 
 // ═══════════════ DESKTOP PROPERTIES ═══════════════
 function openDesktopProperties() {
