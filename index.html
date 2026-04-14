@@ -171,6 +171,38 @@ body{font-family:'Segoe UI','MS Sans Serif',Arial,sans-serif;overflow:hidden;wid
 
 @keyframes shake{0%,100%{transform:translate(0)}10%{transform:translate(-5px,3px)}20%{transform:translate(5px,-3px)}30%{transform:translate(-3px,5px)}40%{transform:translate(3px,-5px)}50%{transform:translate(-5px,2px)}60%{transform:translate(5px,-2px)}70%{transform:translate(-2px,5px)}80%{transform:translate(2px,-5px)}90%{transform:translate(-3px,3px)}}
 .shaking{animation:shake .5s ease-in-out}
+
+/* CONTEXT MENU */
+.ctx-menu{display:none;position:fixed;z-index:2000;background:var(--g);border:2px outset var(--l);min-width:160px;padding:2px 0;box-shadow:2px 2px 6px rgba(0,0,0,.3);font-size:12px}
+.ctx-item{padding:4px 24px 4px 12px;cursor:pointer;display:flex;align-items:center;gap:8px;white-space:nowrap}
+.ctx-item:hover{background:var(--b);color:#fff}
+.ctx-item.disabled{color:var(--d);cursor:default}
+.ctx-item.disabled:hover{background:transparent;color:var(--d)}
+.ctx-sep{height:1px;background:var(--d);margin:3px 4px}
+.ctx-sub{position:relative}
+.ctx-sub .ctx-arrow{margin-left:auto;font-size:10px}
+.ctx-sub .ctx-submenu{display:none;position:absolute;left:100%;top:-2px;background:var(--g);border:2px outset var(--l);min-width:140px;padding:2px 0;box-shadow:2px 2px 6px rgba(0,0,0,.3)}
+.ctx-sub:hover .ctx-submenu{display:block}
+
+/* INACTIVE TITLEBAR */
+.win-titlebar.inactive{background:var(--d)}
+
+/* SYSTEM TRAY */
+#systray{display:flex;align-items:center;gap:6px;margin-right:4px;font-size:14px}
+.systray-icon{cursor:pointer;position:relative}
+.systray-icon:hover{opacity:.7}
+.systray-tooltip{display:none;position:absolute;bottom:30px;right:0;background:#ffffe1;border:1px solid #000;padding:2px 6px;font-size:11px;white-space:nowrap;z-index:600}
+.systray-icon:hover .systray-tooltip{display:block}
+
+/* DESKTOP PROPERTIES */
+.props-tabs{display:flex;border-bottom:2px solid var(--d);margin-bottom:8px}
+.props-tab{padding:4px 12px;font-size:12px;cursor:pointer;border:2px outset var(--l);border-bottom:none;margin-right:2px;background:var(--g)}
+.props-tab.active{background:#fff;border-bottom:2px solid #fff;margin-bottom:-2px;position:relative}
+.props-panel{padding:8px;font-size:12px}
+.wallpaper-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin:8px 0}
+.wallpaper-opt{width:40px;height:30px;border:2px inset var(--d);cursor:pointer}
+.wallpaper-opt:hover{border-color:var(--b)}
+.wallpaper-opt.selected{border:2px solid var(--b)}
 </style>
 </head>
 <body>
@@ -197,6 +229,12 @@ body{font-family:'Segoe UI','MS Sans Serif',Arial,sans-serif;overflow:hidden;wid
 <div id="taskbar">
   <button id="start-btn"><span style="font-size:18px">🪟</span> Start</button>
   <div id="taskbar-items"></div>
+  <div id="systray">
+    <span class="systray-icon" onclick="systrayClick('volume')">🔊<span class="systray-tooltip">Volume: 50%</span></span>
+    <span class="systray-icon" onclick="systrayClick('network')">🌐<span class="systray-tooltip">Network: Connected (barely)</span></span>
+    <span class="systray-icon" onclick="systrayClick('antivirus')">🛡️<span class="systray-tooltip" id="systray-av">Norton: 0 threats</span></span>
+    <span class="systray-icon" onclick="systrayClick('battery')">🔋<span class="systray-tooltip" id="systray-battery">Battery: 100%</span></span>
+  </div>
   <div id="taskbar-clock"></div>
 </div>
 
@@ -259,6 +297,10 @@ body{font-family:'Segoe UI','MS Sans Serif',Arial,sans-serif;overflow:hidden;wid
 </div>
 
 <div id="fake-cursor">🖱️</div>
+
+
+<!-- CONTEXT MENU -->
+<div class="ctx-menu" id="ctx-menu"></div>
 
 <script>
 // ═══════════════ SOUND ENGINE ═══════════════
@@ -1273,7 +1315,316 @@ document.getElementById('start-btn').addEventListener('click',()=>{
 });
 document.querySelectorAll('.menu-item').forEach(i=>i.addEventListener('click',()=>{document.getElementById('start-menu').style.display='none';openApp(i.dataset.action);}));
 document.addEventListener('click',e=>{if(!e.target.closest('#start-menu')&&!e.target.closest('#start-btn'))document.getElementById('start-menu').style.display='none';});
-document.getElementById('desktop').addEventListener('contextmenu',e=>{e.preventDefault();if(shouldError())spawnError("Right-click is a privilege.");});
+// Context menu handled by new system above
+
+
+// ═══════════════ CONTEXT MENU SYSTEM ═══════════════
+const ctxMenu = document.getElementById('ctx-menu');
+let ctxTarget = null; // what was right-clicked
+
+function showContextMenu(x, y, items) {
+  ctxMenu.innerHTML = '';
+  items.forEach(item => {
+    if (item === '---') {
+      const sep = document.createElement('div');
+      sep.className = 'ctx-sep';
+      ctxMenu.appendChild(sep);
+      return;
+    }
+    if (item.sub) {
+      // Submenu
+      const wrapper = document.createElement('div');
+      wrapper.className = 'ctx-sub ctx-item';
+      wrapper.innerHTML = item.label + '<span class="ctx-arrow">►</span>';
+      const subMenu = document.createElement('div');
+      subMenu.className = 'ctx-submenu ctx-menu';
+      subMenu.style.display = 'none';
+      item.sub.forEach(si => {
+        const subItem = document.createElement('div');
+        subItem.className = 'ctx-item';
+        subItem.textContent = si.label;
+        subItem.addEventListener('click', e => { e.stopPropagation(); hideContextMenu(); si.action(); });
+        subMenu.appendChild(subItem);
+      });
+      wrapper.appendChild(subMenu);
+      wrapper.addEventListener('mouseenter', () => { subMenu.style.display = 'block'; });
+      wrapper.addEventListener('mouseleave', () => { subMenu.style.display = 'none'; });
+      ctxMenu.appendChild(wrapper);
+      return;
+    }
+    const el = document.createElement('div');
+    el.className = 'ctx-item' + (item.disabled ? ' disabled' : '');
+    el.textContent = item.label;
+    if (!item.disabled) {
+      el.addEventListener('click', e => { e.stopPropagation(); hideContextMenu(); item.action(); });
+    }
+    ctxMenu.appendChild(el);
+  });
+
+  // Position — keep on screen
+  ctxMenu.style.display = 'block';
+  const mw = ctxMenu.offsetWidth, mh = ctxMenu.offsetHeight;
+  if (x + mw > window.innerWidth) x = window.innerWidth - mw - 4;
+  if (y + mh > window.innerHeight) y = window.innerHeight - mh - 4;
+  ctxMenu.style.left = x + 'px';
+  ctxMenu.style.top = y + 'px';
+}
+
+function hideContextMenu() {
+  ctxMenu.style.display = 'none';
+  ctxTarget = null;
+}
+
+// Close context menu on any click
+document.addEventListener('click', e => {
+  if (!e.target.closest('.ctx-menu')) hideContextMenu();
+});
+
+// ── Desktop right-click ──
+document.getElementById('desktop').addEventListener('contextmenu', e => {
+  e.preventDefault();
+  // If right-clicking on a desktop icon, show icon menu instead
+  const icon = e.target.closest('.desktop-icon');
+  if (icon) {
+    showIconContextMenu(e.clientX, e.clientY, icon);
+    return;
+  }
+  if (shouldError()) { spawnError("Right-click is a privilege, not a right."); return; }
+  SFX.click();
+  showContextMenu(e.clientX, e.clientY, [
+    { label: '🔄 Arrange Icons', action: () => {
+      if (shouldError()) { spawnError('Icons refused to be arranged.'); return; }
+      desktopIcons.forEach((di, i) => { di.x = 20 + Math.floor(i / 6) * 90; di.y = 20 + (i % 6) * 90; });
+      setupDesktop();
+    }},
+    { label: '📐 Line Up Icons', action: () => {
+      if (shouldError()) { spawnError('Icons are already in line. A crooked line.'); return; }
+      document.querySelectorAll('.desktop-icon').forEach(ic => {
+        ic.style.left = Math.round(parseInt(ic.style.left) / 90) * 90 + 20 + 'px';
+        ic.style.top = Math.round(parseInt(ic.style.top) / 90) * 90 + 20 + 'px';
+      });
+    }},
+    '---',
+    { label: 'Paste', disabled: true },
+    { label: 'Paste Shortcut', disabled: true },
+    '---',
+    { label: '📁 New', sub: [
+      { label: '📁 Folder', action: () => {
+        if (shouldError()) { spawnError('New folder spontaneously deleted itself.'); return; }
+        const name = 'New Folder (' + randInt(1, 999) + ')';
+        desktopIcons.push({ icon: '📁', label: name, action: 'documents', x: randInt(20, 400), y: randInt(20, 400) });
+        setupDesktop();
+        SFX.notify();
+      }},
+      { label: '📄 Text Document', action: () => {
+        if (shouldError()) { spawnError('Cannot create file: disk is full of errors.'); return; }
+        openNotepad();
+      }},
+      { label: '🔗 Shortcut', action: () => {
+        spawnError('Shortcut created! It points to: nothing.');
+      }},
+      { label: '🖼️ Bitmap Image', action: () => {
+        if (shouldError()) { spawnError('Bitmap refused to be created.'); return; }
+        openPaint();
+      }},
+    ]},
+    '---',
+    { label: '🖥️ Properties', action: openDesktopProperties },
+  ]);
+});
+
+// ── Desktop icon right-click ──
+function showIconContextMenu(x, y, iconEl) {
+  if (shouldError()) { spawnError("Context menu crashed."); return; }
+  SFX.click();
+  const label = iconEl.querySelector('.icon-label').textContent;
+  const action = desktopIcons.find(d => d.label === label);
+  showContextMenu(x, y, [
+    { label: '📂 Open', action: () => { if (action) openApp(action.action); else spawnError('Cannot open: ' + label); }},
+    '---',
+    { label: '✂️ Cut', action: () => spawnError(label + ' has been cut. It is now bleeding pixels.') },
+    { label: '📋 Copy', action: () => spawnError(label + ' copied to clipboard. The clipboard is on fire.') },
+    '---',
+    { label: '🗑️ Delete', action: () => {
+      if (label === 'Recycle Bin') { spawnError('You cannot delete the Recycle Bin. Who recycles the recycler?'); return; }
+      if (shouldError()) { spawnError('Delete permission denied by ' + pick(errorTitles)); return; }
+      iconEl.remove();
+      const idx = desktopIcons.findIndex(d => d.label === label);
+      if (idx >= 0) { deletedFiles.push({ name: label, size: randInt(1, 999) + ' KB' }); desktopIcons.splice(idx, 1); }
+      SFX.notify();
+      spawnError(label + ' has been sent to the Recycle Bin. It will be missed. (It won\'t.)');
+    }},
+    { label: '✏️ Rename', action: () => {
+      spawnError('Renaming requires a permit. Permits require a form. Forms require renaming. It\'s a loop.');
+    }},
+    '---',
+    { label: '📄 Properties', action: () => {
+      const msgs = [
+        'Type: Mystery\\nSize: Unknown\\nCreated: Before time\\nModified: When you weren\'t looking',
+        'Type: Icon\\nSize: One icon\\nPurpose: Questionable\\nValue: Sentimental',
+        'Type: Desktop Artifact\\nSize: Takes up emotional space\\nDescription: It sits there.'
+      ];
+      createWindow(label + ' Properties', '📄', '<div class="app-body"><h3>📄 ' + label + ' Properties</h3><pre style="font-size:11px;line-height:1.8;margin-top:8px">' + pick(msgs) + '</pre><br><button class="error-btn" onclick="spawnError(\'Settings applied to the void.\')">Apply</button> <button class="error-btn" onclick="this.closest(\'.window\').remove()">OK</button></div>', 280, 240);
+    }},
+  ]);
+}
+
+// ── Taskbar right-click ──
+document.getElementById('taskbar').addEventListener('contextmenu', e => {
+  e.preventDefault();
+  if (shouldError()) { spawnError('Taskbar is not in the mood.'); return; }
+  SFX.click();
+  showContextMenu(e.clientX, e.clientY, [
+    { label: '🔧 Toolbars', disabled: true },
+    { label: '📐 Adjust Date/Time', action: () => {
+      spawnError('The date is: ' + pick(['yesterday','tomorrow','the heat death of the universe','Tuesday (probably)','ERROR/ERROR/ERROR']) + '\\nThe time is: ' + pick(['now','then','never','always','?:??']));
+    }},
+    '---',
+    { label: '🖥️ Task Manager', action: () => {
+      const procs = ['system_idle.exe (99% CPU)','norton.exe (847% CPU)','mcafee.exe (IMMORTAL)','edge_helper.exe (begging)','clippy.drv (watching you)','error_generator.exe (working hard)','your_patience.exe (NOT RESPONDING)','adobe_updater.exe (ALWAYS UPDATING)','svchost.exe x47 (why so many?)','dwm.exe (drawing errors)'];
+      let h = '<div style="padding:8px;font-size:11px"><p style="font-weight:bold;margin-bottom:6px">Processes: ' + randInt(84,247) + '</p><table style="width:100%;border-collapse:collapse;font-size:10px"><tr style="background:#ddd"><th style="text-align:left;padding:2px 4px">Process</th><th>CPU</th><th>Memory</th></tr>';
+      procs.forEach(p => { h += '<tr style="border-bottom:1px solid #eee"><td style="padding:2px 4px">' + p + '</td><td style="text-align:center">' + randInt(0, 99) + '%</td><td style="text-align:center">' + randInt(1, 999) + ' MB</td></tr>'; });
+      h += '</table><br><button class="error-btn" onclick="spawnError(\'Process killed. It came back.\')">End Task</button> <button class="error-btn" onclick="spawnError(\'New task created: more_errors.exe\')">New Task</button></div>';
+      createWindow('Task Manager', '📊', h, 360, 340);
+    }},
+    { label: '📌 Properties', action: () => {
+      spawnError('Taskbar properties: it\'s a bar. That has tasks. What more do you want?');
+    }},
+  ]);
+});
+
+// ═══════════════ DESKTOP PROPERTIES ═══════════════
+function openDesktopProperties() {
+  if (shouldError()) { spawnError('Properties have no property.'); return; }
+  const wallpapers = [
+    { name: 'Teal (Default)', color: '#008080' },
+    { name: 'Chaos Red', color: '#800000' },
+    { name: 'BSOD Blue', color: '#0000aa' },
+    { name: 'Matrix', color: '#001100' },
+    { name: 'Sunset Panic', color: '#ff6600' },
+    { name: 'Void', color: '#000000' },
+    { name: 'Headache', color: '#ff00ff' },
+    { name: 'Broken', color: '#444444' },
+  ];
+  let wpHtml = '';
+  wallpapers.forEach((wp, i) => {
+    wpHtml += '<div class="wallpaper-opt' + (i === 0 ? ' selected' : '') + '" style="background:' + wp.color + '" title="' + wp.name + '" onclick="setWallpaper(\'' + wp.color + '\',this)"></div>';
+  });
+
+  const screenSavers = ['(None)','Flying Toasters','Pipes','Maze','3D Text: "ERROR"','Bouncing BSOD','Falling Errors','Matrix Rain','Clippy Screensaver'];
+  let ssHtml = '<select style="width:100%;font-size:11px;border:2px inset #999;padding:2px" onchange="previewScreensaver(this.value)">';
+  screenSavers.forEach(s => { ssHtml += '<option>' + s + '</option>'; });
+  ssHtml += '</select>';
+
+  createWindow('Display Properties', '🖥️', '<div style="padding:8px"><div class="props-tabs"><div class="props-tab active" onclick="propsTab(this,\'bg-panel\')">Background</div><div class="props-tab" onclick="propsTab(this,\'ss-panel\')">Screen Saver</div><div class="props-tab" onclick="propsTab(this,\'appear-panel\')">Appearance</div><div class="props-tab" onclick="propsTab(this,\'effects-panel\')">Effects</div></div><div class="props-panel" id="bg-panel"><p style="font-weight:bold;margin-bottom:4px">Wallpaper:</p><div class="wallpaper-grid">' + wpHtml + '</div><p style="font-size:10px;color:#666;margin-top:4px">Select a color. Or don\'t. The desktop does what it wants.</p></div><div class="props-panel" id="ss-panel" style="display:none"><p style="font-weight:bold;margin-bottom:4px">Screen Saver:</p>' + ssHtml + '<p style="font-size:10px;color:#666;margin-top:8px">Wait: <input type="number" value="5" style="width:40px;font-size:11px;border:2px inset #999" min="1"> minutes</p><button class="error-btn" style="margin-top:6px" onclick="previewScreensaver(\'preview\')">Preview</button></div><div class="props-panel" id="appear-panel" style="display:none"><p style="font-weight:bold;margin-bottom:4px">Color Scheme:</p><select style="width:100%;font-size:11px;border:2px inset #999;padding:2px"><option>Windoze Standard</option><option>High Contrast (Higher Anxiety)</option><option>Ugly 90s (Extra Ugly)</option><option>Corporate Depression</option><option>Hacker Green</option></select><p style="font-size:10px;color:#666;margin-top:8px">None of these actually work.</p></div><div class="props-panel" id="effects-panel" style="display:none"><label style="display:block;font-size:11px;margin:4px 0"><input type="checkbox" checked onclick="spawnError(\'Visual effects cannot be changed. They change you.\')"> Show window contents while dragging</label><label style="display:block;font-size:11px;margin:4px 0"><input type="checkbox" onclick="spawnError(\'Smooth edges? In THIS economy?\')"> Smooth edges of screen fonts</label><label style="display:block;font-size:11px;margin:4px 0"><input type="checkbox" onclick="if(this.checked){document.querySelectorAll(\'.desktop-icon\').forEach(i=>{i.style.transition=\'all 2s\';i.style.transform=\'rotate(\'+randInt(-30,30)+\'deg)\';});}">Enable desktop icon chaos</label></div><div style="margin-top:8px;text-align:right"><button class="error-btn" onclick="spawnError(\'Settings applied. Nothing changed.\')">Apply</button> <button class="error-btn" onclick="this.closest(\'.window\').remove()">OK</button> <button class="error-btn" onclick="this.closest(\'.window\').remove()">Cancel</button></div></div>', 340, 360);
+}
+
+function propsTab(tabEl, panelId) {
+  // Deactivate all tabs and panels
+  tabEl.parentElement.querySelectorAll('.props-tab').forEach(t => t.classList.remove('active'));
+  tabEl.classList.add('active');
+  const container = tabEl.closest('.win-body') || tabEl.closest('.window');
+  container.querySelectorAll('.props-panel').forEach(p => p.style.display = 'none');
+  const panel = container.querySelector('#' + panelId);
+  if (panel) panel.style.display = 'block';
+  SFX.click();
+}
+
+function setWallpaper(color, el) {
+  if (shouldError()) { spawnError('Wallpaper refuses to change.'); return; }
+  document.getElementById('desktop').style.background = color;
+  el.parentElement.querySelectorAll('.wallpaper-opt').forEach(w => w.classList.remove('selected'));
+  el.classList.add('selected');
+  SFX.click();
+}
+
+function previewScreensaver(val) {
+  if (val === '(None)') return;
+  if (shouldError()) { spawnError('Screen saver has crashed. Ironic.'); return; }
+  // Quick 3-second "screensaver" overlay
+  const overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;inset:0;z-index:5000;background:#000;display:flex;align-items:center;justify-content:center;cursor:pointer;font-family:Courier New,monospace';
+  const msgs = {
+    'Flying Toasters': '<div style="font-size:60px;animation:spin 2s linear infinite">🍞🔥</div>',
+    'Pipes': '<div style="color:#0f0;font-size:14px">┃━┏┓┗┛┣┫╋ PIPES EVERYWHERE ┃━┏┓┗┛</div>',
+    'Maze': '<div style="color:#fff;font-size:14px">You are in a maze of twisty passages, all alike.</div>',
+    '3D Text: "ERROR"': '<div style="color:red;font-size:60px;font-weight:bold;animation:spin 3s linear infinite">ERROR</div>',
+    'Bouncing BSOD': '<div style="color:#fff;background:#0000aa;padding:20px;font-size:12px">A problem has been detected...<br>Just kidding. This is a screensaver.</div>',
+    'Falling Errors': '<div style="color:red;font-size:20px">⚠️ ERROR ⚠️ ERROR ⚠️ ERROR ⚠️</div>',
+    'Matrix Rain': '<div style="color:#0f0;font-size:10px;line-height:1">01001 ERROR 11010 CRASH 01101 DOOM 10010</div>',
+    'Clippy Screensaver': '<div style="font-size:80px">📎</div><div style="color:#fff;margin-top:10px">It looks like you\'re trying to take a break!</div>',
+    'preview': '<div style="color:#fff;font-size:16px">Screensaver Preview<br><span style="font-size:40px;display:block;margin:10px">💤</span>Move mouse to exit</div>',
+  };
+  overlay.innerHTML = msgs[val] || msgs['preview'];
+  overlay.addEventListener('click', () => overlay.remove());
+  overlay.addEventListener('mousemove', (() => { let moved = false; return () => { if (moved) overlay.remove(); moved = true; }; })());
+  document.body.appendChild(overlay);
+  setTimeout(() => { if (document.body.contains(overlay)) overlay.remove(); }, 5000);
+}
+
+// ═══════════════ SYSTEM TRAY ═══════════════
+let systrayBattery = 100;
+let systrayThreats = 0;
+
+function systrayClick(type) {
+  SFX.click();
+  if (shouldError()) { spawnError('System tray icon has become sentient.'); return; }
+  if (type === 'volume') {
+    createWindow('Volume Control', '🔊', '<div class="app-body"><h3>🔊 Volume Mixer</h3><p>Master Volume:</p><input type="range" value="50" style="width:100%" oninput="if(shouldError())spawnError(\'Volume stuck at \'+this.value+\'%.\')"><br><p style="margin-top:8px">Wave:</p><input type="range" value="80" style="width:100%" oninput="if(Math.random()<.2){this.value=randInt(0,100);spawnError(\'Volume has a mind of its own.\');}"><br><p style="margin-top:8px">MIDI:</p><input type="range" value="0" style="width:100%" oninput="spawnError(\'MIDI? In THIS economy?\')"><br><label style="font-size:11px;margin-top:8px;display:block"><input type="checkbox" onclick="spawnError(\'Cannot mute. The errors must be heard.\')"> Mute all</label></div>', 260, 300);
+  } else if (type === 'network') {
+    createWindow('Network Status', '🌐', '<div class="app-body"><h3>🌐 Network Connection</h3><p><b>Status:</b> Connected (barely)</p><p><b>Speed:</b> ' + pick(['14.4 kbps','56 kbps','2400 baud','1 byte/hour','vibes only']) + '</p><p><b>Signal Strength:</b> ' + pick(['Weak','Very Weak','Pathetically Weak','Imaginary','Negative']) + '</p><p><b>IP Address:</b> 192.168.' + randInt(0,255) + '.' + randInt(0,255) + '</p><p><b>DNS:</b> ' + pick(['Not responding','On vacation','Confused','404']) + '</p><br><button class="error-btn" onclick="spawnError(\'Disconnected! Reconnecting... failed.\')">Disconnect</button> <button class="error-btn" onclick="spawnError(\'Diagnosis: everything is wrong.\')">Diagnose</button></div>', 300, 300);
+  } else if (type === 'antivirus') {
+    createWindow('Norton Alert', '🛡️', '<div class="app-body"><h3>🛡️ Norton Security Alert</h3><p><b>Threats Found:</b> <span style="color:red;font-weight:bold">' + systrayThreats + '</span></p><p><b>System Status:</b> ' + (systrayThreats > 10 ? '☠️ CRITICAL' : systrayThreats > 5 ? '⚠️ At Risk' : '✅ Probably Fine') + '</p><p><b>Last Scan:</b> ' + pick(['Never','1847 days ago','Tomorrow','When pigs fly']) + '</p><p><b>Norton CPU Usage:</b> ' + Math.min(99, 40 + systrayThreats * 5) + '%</p><br><button class="error-btn" onclick="spawnError(\'Scan found Norton itself as the biggest threat.\')">Full Scan</button> <button class="error-btn" onclick="spawnError(\'Quarantine is full of Norton processes.\')">Quarantine</button></div>', 300, 300);
+  } else if (type === 'battery') {
+    createWindow('Power Options', '🔋', '<div class="app-body"><h3>🔋 Power Status</h3><p><b>Battery:</b> ' + systrayBattery + '%</p><div style="width:100%;height:20px;background:#fff;border:2px inset #999;margin:6px 0"><div style="height:100%;background:' + (systrayBattery > 50 ? '#2ecc71' : systrayBattery > 20 ? '#f39c12' : '#e74c3c') + ';width:' + systrayBattery + '%;transition:width .3s"></div></div><p><b>Power Plan:</b> ' + pick(['Balanced (Unbalanced)','High Performance (Low Results)','Power Saver (Saves Nothing)','Chaos Mode']) + '</p><p><b>Time Remaining:</b> ' + pick(['Unknown','Not Long','Shorter Than You Think','lol']) + '</p><p style="font-size:10px;color:#666;margin-top:8px">Note: Battery drains faster when errors occur. Errors always occur.</p><br><button class="error-btn" onclick="spawnError(\'Hibernate failed: computer is too anxious to sleep.\')">Hibernate</button> <button class="error-btn" onclick="spawnError(\'Standby mode: computer pretends to sleep but watches you.\')">Standby</button></div>', 300, 320);
+  }
+}
+
+// Battery drain and threat increase over time
+setInterval(() => {
+  if (S.gameOver || !S.started) return;
+  // Battery drains
+  systrayBattery = Math.max(0, systrayBattery - (S.phase >= 3 ? randInt(1, 3) : S.phase >= 1 ? 1 : 0));
+  const batEl = document.getElementById('systray-battery');
+  if (batEl) {
+    const icon = systrayBattery > 50 ? '🔋' : systrayBattery > 20 ? '🪫' : '⚠️';
+    batEl.textContent = 'Battery: ' + systrayBattery + '%';
+    batEl.parentElement.firstChild.textContent = icon;
+  }
+  if (systrayBattery <= 0 && S.phase >= 2) {
+    spawnError('CRITICAL: Battery at 0%. Computer running on spite and denial.');
+    systrayBattery = randInt(1, 10); // "recharges" a bit
+  }
+  // Norton finds threats
+  if (S.phase >= 1 && Math.random() < 0.3) {
+    systrayThreats += randInt(1, S.phase >= 3 ? 5 : 2);
+    const avEl = document.getElementById('systray-av');
+    if (avEl) avEl.textContent = 'Norton: ' + systrayThreats + ' threats';
+  }
+}, 10000);
+
+// ═══════════════ ACTIVE/INACTIVE TITLEBAR ═══════════════
+function setActiveWindow(winEl) {
+  // Make all titlebars inactive
+  document.querySelectorAll('.win-titlebar').forEach(tb => {
+    if (!tb.closest('.error-dialog')) {
+      tb.classList.add('inactive');
+    }
+  });
+  // Make clicked window active
+  if (winEl) {
+    const tb = winEl.querySelector('.win-titlebar');
+    if (tb) tb.classList.remove('inactive');
+  }
+}
+
+// Patch the existing createWindow to support active/inactive
+const _origCreateWindow = createWindow;
+// We need to add mousedown listeners for focus — override via event delegation
+document.getElementById('desktop').addEventListener('mousedown', e => {
+  const win = e.target.closest('.window');
+  if (win) setActiveWindow(win);
+}, true);
 
 // ═══════════════ CHAOS ENGINE ═══════════════
 function updatePhase(){const p=currentPhase();if(p!==S.phase){S.phase=p;onPhaseChange(p);}}
