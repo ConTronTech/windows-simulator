@@ -659,27 +659,28 @@ function triggerBSOD(){
   }
 }
 
+function clearDesktop(){
+  document.querySelectorAll('.window,.error-dialog,.popup-ad').forEach(e=>e.remove());
+  S.windows=[];
+  updateTaskbar();
+}
+
 function bsodReboot(){
   if(S.gameOver) return;
   const bsod = document.getElementById('bsod');
   bsod.style.display = 'none';
   SFX.shutdown();
 
+  clearDesktop();
+
   // Show boot sequence then restore desktop
   showBootSequence(() => {
-    // Restore desktop state (keep tally, keep windows)
     document.getElementById('desktop').style.display = 'block';
     document.getElementById('taskbar').style.display = 'flex';
     S.stability = Math.max(20, 75 - S.bsodCount * 15);
     SFX.startup();
     updateClock();
-    // Windows survive the reboot... or do they?
-    if(S.phase >= 2) {
-      // Close some random windows on reboot
-      const toClose = S.windows.slice(0, randInt(1, Math.min(3, S.windows.length)));
-      toClose.forEach(w => closeWin(w.id));
-      if(toClose.length > 0) setTimeout(()=>spawnError("Some programs didn't survive the reboot. RIP."), 1500);
-    }
+    setupDesktop();
   }, true);
 }
 
@@ -711,11 +712,13 @@ function triggerForcedUpdate(){
         overlay.style.display='none';
         S.updateActive=false;
         SFX.shutdown();
+        clearDesktop();
         showBootSequence(()=>{
           document.getElementById('desktop').style.display='block';
           document.getElementById('taskbar').style.display='flex';
           SFX.startup();
           updateClock();
+          setupDesktop();
           if(S.phase>=3)setTimeout(()=>spawnError("The update installed 3 new bugs and removed 0 old ones."),1500);
         }, true);
       }, 1200);
