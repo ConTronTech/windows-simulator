@@ -677,7 +677,7 @@ function buildErrorButtons(dlg) {
   const allLabels = ['OK','Cancel','Retry','Abort','Ignore','Yes','No','Maybe',
     'Help','Continue','Stop','Skip','Accept','Decline','Later','Never',
     'Why','Please','Undo','Oops','Fine','Nope','Sure','Hmm','Panic',
-    'Cry','Scream','LOL','Bruh','Trust Me','Don\\'t Click'];
+    'Cry','Scream','LOL','Bruh','Trust Me','Don\'t Click'];
 
   // Pick 2-5 random buttons depending on phase
   const count = S.phase <= 1 ? randInt(2,3) : S.phase <= 2 ? randInt(3,4) : randInt(3,5);
@@ -1074,7 +1074,7 @@ function startRAMDownload() {
 
   const logMsgs = [
     'Connecting to RAM cloud servers...',
-    'Bypassing firewall (don\\'t worry about it)...',
+    'Bypassing firewall (don\'t worry about it)...',
     'Allocating virtual memory sectors...',
     'Downloading RAM_chunk_001.dll...',
     'Compressing 1s and 0s for faster download...',
@@ -1138,7 +1138,7 @@ function startRAMDownload() {
         'a firewall made of actual fire',
         'an existential crisis',
         'a buffer overflow (the buffer is crying)',
-        'a memory leak (it\\'s a real leak, get a bucket)',
+        'a memory leak (it\'s a real leak, get a bucket)',
         'incompatible RAM vibes',
         'a licensing error for free software',
       ]));
@@ -1184,8 +1184,8 @@ function openApp(action){
 
 function openMyComputer(){
   createWindow('My Computer','💻',`<div class="file-grid">
-    <div class="file-item" onclick="if(Math.random()<0.5)spawnError('Drive C: has feelings and doesn\\'t want to be opened.');else spawnError('Access denied. This is MY computer, not yours.')"><div class="file-icon">💾</div>C: Drive</div>
-    <div class="file-item" onclick="spawnError('Drive D: doesn\\'t exist. It never did.')"><div class="file-icon">💿</div>D: Drive</div>
+    <div class="file-item" onclick="if(Math.random()<0.5)spawnError('Drive C: has feelings and doesn\'t want to be opened.');else spawnError('Access denied. This is MY computer, not yours.')"><div class="file-icon">💾</div>C: Drive</div>
+    <div class="file-item" onclick="spawnError('Drive D: doesn\'t exist. It never did.')"><div class="file-icon">💿</div>D: Drive</div>
     <div class="file-item" onclick="spawnError('The floppy drive is a portal to 1995.')"><div class="file-icon">💽</div>A: Floppy</div>
     <div class="file-item" onclick="spawnError('Network drive is on a coffee break.')"><div class="file-icon">🌐</div>Z: Network</div>
   </div>`,350,250);
@@ -1310,7 +1310,7 @@ function openDocuments(){
     {icon:'📄',name:'readme.txt',err:"This file is write-only."},
   ];
   let h='<div class="file-grid">';
-  files.forEach(f=>{h+=`<div class="file-item" onclick="spawnError('${f.err.replace(/'/g,"\\'")}')"><div class="file-icon">${f.icon}</div>${f.name}</div>`;});
+  files.forEach(f=>{h+=`<div class="file-item" onclick="spawnError('${f.err.replace(/'/g,"\'")}')"><div class="file-icon">${f.icon}</div>${f.name}</div>`;});
   createWindow('My Documents','📁',h+'</div>',380,280);
 }
 
@@ -1362,7 +1362,7 @@ function openPrograms(){
     {name:'Download RAM',icon:'🐏',err:"RAM download requires downloading RAM first."},
   ];
   let h='<div class="file-grid">';
-  p.forEach(x=>{h+=`<div class="file-item" onclick="spawnError('${x.err.replace(/'/g,"\\'")}')"><div class="file-icon">${x.icon}</div>${x.name}</div>`;});
+  p.forEach(x=>{h+=`<div class="file-item" onclick="spawnError('${x.err.replace(/'/g,"\'")}')"><div class="file-icon">${x.icon}</div>${x.name}</div>`;});
   createWindow('Programs','📁',h+'</div>',360,280);
 }
 
