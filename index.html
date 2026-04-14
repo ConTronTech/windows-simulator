@@ -833,16 +833,223 @@ const desktopIcons=[
 function openApp(a){
   if(S.gameOver||S.booting)return;
   if(shouldError()){spawnError();return;}
-  const apps={mycomputer:openMyComputer,recyclebin:openRecycleBin,notepad:openNotepad,paint:openPaint,calculator:openCalculator,internet:openInternet,documents:openDocuments,help:openHelp,settings:openSettings,find:openFind,programs:openPrograms,shutdown:openShutdown,downloadram:openDownloadRAM,adobe:openAdobe,edge:openEdge,norton:openNorton,mcafee:openMcAfee,winrar:openWinRAR,itunes:openiTunes};
+  const apps={mycomputer:openMyComputer,recyclebin:openRecycleBin,notepad:openNotepad,paint:openPaint,calculator:openCalculator,internet:openInternet,documents:openDocuments,help:openHelp,settings:openSettings,find:openFind,programs:openPrograms,shutdown:openShutdown,downloadram:openDownloadRAM,adobe:openAdobe,edge:openEdge,norton:openNorton,mcafee:openMcAfee,winrar:openWinRAR,itunes:openiTunes,defrag:openDefrag,cmd:openCMD};
   (apps[a]||function(){spawnError(a+'.exe has stopped working.');})();
 }
 
 function openMyComputer(){
-  createWindow('My Computer','💻','<div class="file-grid"><div class="file-item" onclick="spawnError(\'Drive C: has feelings and refuses to open.\')"><div class="file-icon">💾</div>C: Drive</div><div class="file-item" onclick="spawnError(\'Drive D: does not exist. It never did.\')"><div class="file-icon">💿</div>D: Drive</div><div class="file-item" onclick="spawnError(\'The floppy drive is a portal to 1995.\')"><div class="file-icon">💽</div>A: Floppy</div><div class="file-item" onclick="spawnError(\'Network drive is on a coffee break.\')"><div class="file-icon">🌐</div>Z: Network</div></div>',350,250);
+  createWindow('My Computer','💻','<div class="file-grid"><div class="file-item" onclick="openDrive(\'C\')"><div class="file-icon">💾</div>C: Drive</div><div class="file-item" onclick="openDrive(\'D\')"><div class="file-icon">💿</div>D: Drive</div><div class="file-item" onclick="openDrive(\'A\')"><div class="file-icon">💽</div>A: Floppy</div><div class="file-item" onclick="openDrive(\'Z\')"><div class="file-icon">🌐</div>Z: Network</div></div>',350,250);
+}
+
+// ═══════════════ FILE SYSTEM ═══════════════
+const FS = {
+  'C:': {
+    'Windows': {
+      'System32': {'ntoskrnl.exe':'CORE','hal.dll':'CORE','cmd.exe':'Program','win32k.sys':'CORE','drivers':{'keyboard.sys':'Driver','mouse.sys':'Driver','display.drv':'Driver','audio.sys':'Driver','sanity.sys':'Driver'}},
+      'Temp': {'~DF9832.tmp':'Junk','cookies_backup.dat':'Junk','definitely_not_spyware.tmp':'Junk'},
+      'Fonts': {'arial.ttf':'Font','comic_sans.ttf':'Font (cursed)','wingdings.ttf':'Font (why)'},
+    },
+    'Program Files': {
+      'Adobie': {'reader.exe':'268 MB (mostly updater)','updater.exe':'267 MB','actual_pdf_code.dll':'1 KB'},
+      'Norton': {'norton.exe':'999 MB','norton_helper.exe':'500 MB','YOUR_DATA.zip':'Suspicious'},
+      'WinRAR': {'winrar.exe':'3 MB','license.txt':'EXPIRED 847 DAYS AGO'},
+      'McAfee': {'mcafee.exe':'CANNOT BE DELETED','uninstall.exe':'DOES NOTHING'},
+      'Edge': {'edge.exe':'Needy','guilt_trip.dll':'Loaded','your_default_browser.cfg':'MINE'},
+    },
+    'Users': {
+      'You': {
+        'Desktop': {'homework.doc':'Empty','todo.txt':'1. Fix PC\\n2. Give up','secrets.zip':'PASSWORD PROTECTED'},
+        'Downloads': {'free_robux.exe':'VIRUS','totally_legal_movie.avi':'VIRUS','ram_download.exe':'NOT REAL','browser_toolbar_installer.exe':'VIRUS'},
+        'Pictures': {'selfie.jpg':'Corrupted','cat.png':'Also corrupted','screenshot_of_error.png':'Ironic'},
+      },
+    },
+    'System32_README.txt': 'DO NOT DELETE SYSTEM32. SERIOUSLY. WE MEAN IT.',
+  },
+  'D:': {'Games':{'solitaire_save.dat':'Corrupted','minesweeper_highscore.txt':'0'},'Backups':{'backup_2019.zip':'Also corrupted','backup_2020.zip':'Missing','backup_2021.zip':'Was never made'}},
+  'A:': {'DOOM.WAD':'THE ONLY GOOD FILE ON THIS COMPUTER','AUTOEXEC.BAT':'@echo off\\necho Welcome to 1995','CONFIG.SYS':'FILES=40\\nBUFFERS=20\\nDEVICE=HIMEM.SYS'},
+  'Z:': {},
+};
+
+let deletedFiles = [];
+let sys32Deleted = false;
+
+function openDrive(letter) {
+  if(shouldError()){spawnError();return;}
+  if(letter === 'Z'){spawnError('Network drive Z: is unreachable. The network called in sick.');return;}
+  const data = FS[letter + ':'];
+  if(!data){spawnError('Drive ' + letter + ': does not exist.');return;}
+  showFolder(letter + ':\\', data, letter + ': Drive');
+}
+
+function showFolder(path, folderData, title) {
+  if(sys32Deleted && path.includes('System32')){spawnError('System32 no longer exists. Because YOU deleted it.');return;}
+  let html = '<div style="padding:4px"><div style="background:#eee;border:2px inset #999;padding:3px 8px;font-size:11px;margin-bottom:6px">📂 ' + path + '</div><div class="file-grid">';
+  const entries = Object.entries(folderData);
+  if(entries.length === 0){
+    html += '<div style="grid-column:span 4;text-align:center;color:#999;padding:20px;font-size:12px">This folder is empty. Like your soul.</div>';
+  }
+  entries.forEach(([name, val]) => {
+    const isFolder = typeof val === 'object' && val !== null;
+    const icon = isFolder ? '📁' : name.endsWith('.exe') ? '⚙️' : name.endsWith('.dll')||name.endsWith('.sys')||name.endsWith('.drv') ? '🔧' : name.endsWith('.txt')||name.endsWith('.doc')||name.endsWith('.cfg') ? '📄' : name.endsWith('.dat')||name.endsWith('.zip')||name.endsWith('.tmp') ? '📦' : name.endsWith('.jpg')||name.endsWith('.png') ? '🖼️' : name.endsWith('.mp3')||name.endsWith('.avi')||name.endsWith('.WAD') ? '🎵' : name.endsWith('.ttf') ? '🔤' : name.endsWith('.bat') ? '⬛' : '📄';
+    const epath = path + name;
+    if(isFolder){
+      html += '<div class="file-item" onclick="browseFolder(\'' + epath.replace(/'/g,"\\'") + '\')"><div class="file-icon">' + icon + '</div>' + name + '</div>';
+    } else {
+      html += '<div class="file-item" onclick="fileAction(\'' + epath.replace(/'/g,"\\'") + '\',\'' + String(val).replace(/'/g,"\\'") + '\')"><div class="file-icon">' + icon + '</div>' + name + '</div>';
+    }
+  });
+  html += '</div>';
+
+  // Add delete button for folders that aren't root
+  if(path !== 'C:\\' && path !== 'D:\\' && path !== 'A:\\'){
+    html += '<div style="padding:4px 12px;margin-top:4px"><button class="error-btn" onclick="deleteFolder(\'' + path.replace(/'/g,"\\'") + '\')" style="background:#fdd;font-size:11px">🗑️ Delete this folder</button></div>';
+  }
+  html += '</div>';
+  createWindow(title || path, '📂', html, 400, 320);
+}
+
+function browseFolder(path) {
+  if(shouldError()){spawnError();return;}
+  // Navigate the FS tree
+  const parts = path.replace(/\\\\/g,'/').split('/').filter(Boolean);
+  let current = FS;
+  const drive = parts[0]; // "C:"
+  current = FS[drive];
+  if(!current){spawnError('Path not found: ' + path);return;}
+  for(let i=1;i<parts.length;i++){
+    if(current[parts[i]] && typeof current[parts[i]] === 'object'){
+      current = current[parts[i]];
+    } else {
+      spawnError('Folder not found: ' + parts[i]);return;
+    }
+  }
+  showFolder(path + '\\', current);
+}
+
+function fileAction(path, info) {
+  if(shouldError()){spawnError();return;}
+  // Opening files
+  const name = path.split('\\').pop();
+  if(name.endsWith('.exe')){
+    if(info === 'VIRUS' || info === 'NOT REAL'){
+      spawnError('Running ' + name + '... Congratulations, you now have ' + randInt(3,20) + ' new viruses!');
+      S.stability -= randInt(5,15);
+      if(S.phase >= 2) setTimeout(spawnPopupAd, 500);
+    } else if(info === 'CANNOT BE DELETED'){
+      spawnError('mcafee.exe is running. mcafee.exe is always running. mcafee.exe cannot be stopped.');
+    } else if(info === 'DOES NOTHING'){
+      spawnError('uninstall.exe has run successfully! Just kidding. McAfee is still here.');
+    } else if(info === 'Needy'){
+      openEdge();
+    } else {
+      spawnError('Running ' + name + '... it crashed immediately.');
+    }
+  } else if(name.endsWith('.txt') || name.endsWith('.doc') || name.endsWith('.cfg') || name.endsWith('.bat')){
+    const w = createWindow(name, '📝', '<textarea class="notepad-content" spellcheck="false">' + info + '</textarea>', 350, 200);
+  } else if(name.endsWith('.jpg') || name.endsWith('.png')){
+    const colors = ['#f00','#0f0','#00f','#ff0','#f0f','#0ff'];
+    let cvHtml = '<canvas id="img-cv" width="300" height="200"></canvas>';
+    const w = createWindow(name, '🖼️', cvHtml, 340, 250);
+    if(w){
+      const cv = w.el.querySelector('#img-cv'), ctx = cv.getContext('2d');
+      ctx.fillStyle = '#000'; ctx.fillRect(0,0,300,200);
+      // Draw "corrupted" image
+      for(let i=0;i<50;i++){
+        ctx.fillStyle = pick(colors);
+        ctx.fillRect(randInt(0,280),randInt(0,180),randInt(5,40),randInt(2,20));
+      }
+      ctx.fillStyle='#fff';ctx.font='14px monospace';ctx.fillText('[ IMAGE CORRUPTED ]',60,100);
+    }
+  } else if(name.endsWith('.mp3') || name.endsWith('.avi')){
+    spawnError('Cannot play ' + name + ': your speakers have filed a restraining order.');
+  } else if(name.endsWith('.zip') || name.endsWith('.dat')){
+    spawnError('Cannot open ' + name + ': ' + info);
+  } else if(name === 'DOOM.WAD'){
+    createWindow('DOOM','🎮','<div style="padding:20px;text-align:center;background:#000;color:#0f0;font-family:monospace"><p style="font-size:24px;margin-bottom:10px">🔫 DOOM</p><p>You found DOOM!</p><p style="margin-top:10px">Unfortunately, this PC can barely run Windoze, let alone DOOM.</p><p style="margin-top:10px;font-size:10px;color:#0a0">But the fact that DOOM.WAD exists means someone had good taste.</p></div>',320,220);
+  } else {
+    spawnError('Cannot open ' + name + ': ' + info);
+  }
+}
+
+function deleteFolder(path) {
+  const folderName = path.split('\\').filter(Boolean).pop();
+
+  // THE BIG ONE — System32 deletion
+  if(path.includes('System32')){
+    if(!confirm('⚠️ WARNING: You are about to delete System32.\\n\\nThis WILL destroy your computer.\\n\\nAre you absolutely sure?')){return;}
+    if(!confirm('⚠️⚠️ FINAL WARNING ⚠️⚠️\\n\\nDeleting System32 is PERMANENT.\\nThere is no undo.\\nYour computer WILL die.\\n\\nLast chance to cancel.')){return;}
+    sys32Deleted = true;
+    SFX.critical();
+    // Close all windows
+    clearDesktop();
+    // Dramatic death sequence
+    const desk = document.getElementById('desktop');
+    desk.innerHTML = '<div id="desktop-glitch"></div>';
+    desk.style.background = '#000';
+    document.getElementById('taskbar').style.display = 'none';
+
+    const deathMsgs = [
+      'C:\\Windows\\System32 has been deleted.',
+      'ntoskrnl.exe not found...',
+      'hal.dll not found...',
+      'win32k.sys not found...',
+      'keyboard.sys not found... (how are you reading this?)',
+      'ERROR: Everything not found.',
+      'The system is collapsing...',
+      'Goodbye.',
+    ];
+    let msgIdx = 0;
+    const deathEl = document.createElement('div');
+    deathEl.style.cssText = 'position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#f00;font-family:Courier New,monospace;font-size:14px;line-height:2;text-align:center;padding:20px';
+    desk.appendChild(deathEl);
+
+    const deathIv = setInterval(()=>{
+      if(msgIdx < deathMsgs.length){
+        deathEl.innerHTML += deathMsgs[msgIdx] + '<br>';
+        SFX.error();
+        screenShake();
+        msgIdx++;
+      } else {
+        clearInterval(deathIv);
+        setTimeout(()=>{
+          // Final BSOD and game over
+          S.bsodCount = 99;
+          triggerBSOD();
+          setTimeout(triggerGameOver, 3000);
+        }, 1500);
+      }
+    }, 800);
+    return;
+  }
+
+  // Deleting other folders
+  if(shouldError()){spawnError('Cannot delete ' + folderName + ': folder is in use by another error.');return;}
+
+  // Navigate to parent and delete
+  const parts = path.replace(/\\\\/g,'/').split('/').filter(Boolean);
+  let current = FS;
+  current = FS[parts[0]];
+  for(let i=1;i<parts.length-1;i++){
+    if(current[parts[i]]) current = current[parts[i]];
+  }
+  const target = parts[parts.length-1];
+  if(current && current[target]){
+    deletedFiles.push({name:target,size:randInt(1,999)+' KB'});
+    delete current[target];
+    spawnError(folderName + ' has been sent to the shadow realm (Recycle Bin).');
+    SFX.notify();
+  }
 }
 
 function openRecycleBin(){
-  createWindow('Recycle Bin','🗑️','<div class="recycle-msg"><p style="font-size:40px;margin-bottom:12px">🗑️</p><p><b>Contains:</b></p><p>• Your productivity (3.2 GB)</p><p>• Time you\'ll never get back (∞ GB)</p><p>• hope.exe (0 bytes)</p><p>• system_stability.dll (corrupted)</p><br><button class="error-btn" onclick="spawnError(\'Cannot empty. It empties you.\')">Empty</button> <button class="error-btn" onclick="spawnError(\'You cannot restore what was never there.\')">Restore</button></div>',300,280);
+  let items = '<p>• Your productivity (3.2 GB)</p><p>• Time you\'ll never get back (∞ GB)</p><p>• hope.exe (0 bytes)</p>';
+  deletedFiles.forEach(f=>{items+='<p>• '+f.name+' ('+f.size+')</p>';});
+  createWindow('Recycle Bin','🗑️','<div class="recycle-msg"><p style="font-size:40px;margin-bottom:12px">🗑️</p><p><b>Contains ('+( 3+deletedFiles.length)+' items):</b></p>'+items+'<br><button class="error-btn" onclick="emptyRecycle()">Empty</button> <button class="error-btn" onclick="spawnError(\'Restored! Just kidding. Files are gone forever.\')">Restore</button></div>',300,300);
+}
+function emptyRecycle(){
+  if(shouldError()){spawnError('Cannot empty. It empties you.');return;}
+  deletedFiles=[];
+  spawnError('Recycle Bin emptied. Your productivity and hope are gone forever. '+randInt(1,5)+' new errors were found in the trash.');
 }
 
 function openNotepad(){
@@ -896,10 +1103,75 @@ function openFind(){createWindow('Find','🔍','<div style="padding:12px"><p sty
 function doFind(){const i=document.getElementById('find-input'),r=document.getElementById('find-results');if(!i||!r)return;if(shouldError()){spawnError("Find lost itself.");return;}const f=['not_your_file.exe','definitely_a_virus.bat','error_log_'+randInt(1,999)+'.txt','help_me.sos','cookies.dat'];r.innerHTML='<p><b>Results:</b></p>'+f.map(x=>'<p style="cursor:pointer;margin:2px 0" onclick="spawnError(\'Cannot open: on vacation.\')">'+x+'</p>').join('');}
 
 function openPrograms(){
-  const p=[{n:'Minesweeper',i:'💣',e:"Hit a mine. Ironic."},{n:'Solitaire',i:'🃏',e:"Solitaire is lonely."},{n:'Defragmenter',i:'📊',e:"Defragmenter fragmented itself."},{n:'Command Prompt',i:'⬛',e:"Ran out of commands."},{n:'Media Player',i:'🎵',e:"Having existential crisis."},{n:'Virus Scanner',i:'🛡️',e:"Found 847 viruses. Scanner IS the virus."},{n:'Adobie Reader',i:'🔴',e:"Adobie needs to update first."},{n:'Edgé',i:'🌊',e:"Edge wants to be your default... for everything."},{n:'Norton',i:'🛡️',e:"Norton found Norton as a threat."},{n:'McAfee',i:'🔓',e:"McAfee cannot be opened. Or closed. Or uninstalled."},{n:'WinRAR',i:'📦',e:"Trial expired 847 days ago. Still works somehow."},{n:'iTunez',i:'🎵',e:"iTunes installed QuickTime without asking."}];
-  let h='<div class="file-grid">';p.forEach(x=>{h+='<div class="file-item" onclick="spawnError(\''+x.e.replace(/'/g,"\\'")+"')\"><div class=\"file-icon\">"+x.i+"</div>"+x.n+"</div>";});
+  const p=[
+    {n:'Minesweeper',i:'💣',a:'spawnError("Hit a mine. Ironic.")'},
+    {n:'Solitaire',i:'🃏',a:'spawnError("Solitaire is lonely.")'},
+    {n:'Defragmenter',i:'📊',a:'openDefrag()'},
+    {n:'Command Prompt',i:'⬛',a:'openCMD()'},
+    {n:'Media Player',i:'🎵',a:'spawnError("Having existential crisis.")'},
+    {n:'Adobie Reader',i:'🔴',a:'openAdobe()'},
+    {n:'Edgé',i:'🌊',a:'openEdge()'},
+    {n:'Norton 360',i:'🛡️',a:'openNorton()'},
+    {n:'McAfee',i:'🔓',a:'openMcAfee()'},
+    {n:'WinRAR',i:'📦',a:'openWinRAR()'},
+    {n:'iTunez',i:'🎵',a:'openiTunes()'},
+  ];
+  let h='<div class="file-grid">';
+  p.forEach(x=>{h+='<div class="file-item" onclick="'+x.a+'"><div class="file-icon">'+x.i+'</div>'+x.n+'</div>';});
   createWindow('Programs','📁',h+'</div>',400,320);
 }
+
+// DEFRAGMENTER
+function openDefrag(){
+  const w=createWindow('Disk Defragmenter','📊','<div class="app-body"><h3>📊 Disk Defragmenter</h3><p>Analyzing drive C:...</p><canvas id="defrag-cv" width="340" height="140" style="border:2px inset #999;margin:6px 0;display:block"></canvas><p id="defrag-status" style="font-size:11px">Analyzing...</p><p id="defrag-pct" style="font-size:11px;color:#666">0% complete</p><br><button class="error-btn" onclick="spawnError(\'Defragmenter has fragmented itself.\')">Defragment</button> <button class="error-btn" onclick="spawnError(\'Analysis found: chaos.\')">Analyze</button></div>',380,320);
+  if(w){
+    const cv=w.el.querySelector('#defrag-cv');if(!cv)return;
+    const ctx=cv.getContext('2d');
+    const cols=['#ff0000','#0000ff','#00ff00','#ffffff','#ffff00','#ff00ff','#00ffff','#808080'];
+    let pct=0;
+    const iv=setInterval(()=>{
+      if(!document.contains(w.el)){clearInterval(iv);return;}
+      for(let i=0;i<20;i++){ctx.fillStyle=pick(cols);ctx.fillRect(randInt(0,33)*10,randInt(0,13)*10,9,9);}
+      pct+=randInt(1,3);
+      if(S.phase>=2&&Math.random()<.2)pct=Math.max(0,pct-randInt(1,10));
+      const st=w.el.querySelector('#defrag-status'),pc=w.el.querySelector('#defrag-pct');
+      if(st)st.textContent=pick(['Moving clusters...','Defragmenting...','Rearranging chaos...','Losing fragments...','Questioning existence...']);
+      if(pc)pc.textContent=Math.min(pct,100)+'% complete';
+      if(pct>=100){clearInterval(iv);if(st)st.textContent='Done! Disk is now more fragmented.';S.stability-=3;}
+    },300);
+  }
+}
+
+// COMMAND PROMPT
+function openCMD(){
+  const w=createWindow('Command Prompt','⬛','<div style="background:#000;color:#ccc;font-family:Courier New,monospace;font-size:12px;padding:6px;height:100%;overflow-y:auto" id="cmd-output">Microsoft Windoze [Version 95.420.69]<br>(C) Windoze Corporation. No rights reserved.<br><br></div><div style="display:flex;background:#000;padding:2px"><span style="color:#ccc;font-family:Courier New,monospace;font-size:12px;padding:2px">C:\\&gt;</span><input type="text" id="cmd-input" style="flex:1;background:#000;color:#ccc;border:none;outline:none;font-family:Courier New,monospace;font-size:12px;padding:2px" autofocus></div>',420,280);
+  if(w){
+    const inp=w.el.querySelector('#cmd-input'),out=w.el.querySelector('#cmd-output');
+    inp.addEventListener('keydown',e=>{
+      if(e.key!=='Enter')return;
+      const cmd=inp.value.trim().toLowerCase();
+      out.innerHTML+='C:\\&gt; '+inp.value+'<br>';
+      inp.value='';
+      if(shouldError()){out.innerHTML+='<span style="color:#f00">ERROR: Command caused an error.</span><br>';spawnError();return;}
+      if(!cmd)return;
+      else if(cmd==='help'||cmd==='/?')out.innerHTML+='Commands: help, dir, cls, del, format, tree, ping, ver, exit<br>None work properly.<br>';
+      else if(cmd==='dir')out.innerHTML+=' Volume in drive C has no label<br> Directory of C:\\<br><br> WINDOWS &lt;DIR&gt;<br> PROGRAM~ &lt;DIR&gt;<br> USERS &lt;DIR&gt;<br> '+randInt(1,99)+' File(s) '+randInt(100,999)+','+randInt(100,999)+' bytes<br> '+randInt(0,5)+' bytes free (uh oh)<br>';
+      else if(cmd==='cls')out.innerHTML='';
+      else if(cmd.includes('del')&&cmd.includes('system32')||cmd.includes('rmdir')&&cmd.includes('system32')){out.innerHTML+='<span style="color:#f00">Deleting System32...</span><br>';setTimeout(()=>deleteFolder('C:\\\\Windows\\\\System32'),500);}
+      else if(cmd.startsWith('del'))out.innerHTML+='File deleted. (It was not.)<br>';
+      else if(cmd.startsWith('format')){out.innerHTML+='<span style="color:#ff0">WARNING: ALL DATA LOST</span><br>Just kidding. Format is broken.<br>';spawnError('Format.exe formatted itself.');}
+      else if(cmd==='tree')out.innerHTML+='C:\\<br>\u251C\u2500\u2500 Windows (don\'t touch)<br>\u2502   \u2514\u2500\u2500 System32 (SERIOUSLY)<br>\u251C\u2500\u2500 Program Files (bloatware)<br>\u2514\u2500\u2500 Users\\You (disappointment)<br>';
+      else if(cmd.startsWith('ping'))out.innerHTML+='Pinging...<br>Request timed out.<br>Request went to voicemail.<br>Request filed a restraining order.<br>';
+      else if(cmd==='ver')out.innerHTML+='Windoze [Version 95.420.69.lol]<br>';
+      else if(cmd==='exit')spawnError('There is no exit. You live here now.');
+      else if(cmd.includes('sudo'))out.innerHTML+='<span style="color:#f00">This is Windoze, not Linux. Nice try.</span><br>';
+      else out.innerHTML+='\''+cmd+'\' is not recognized as a command or thing that works.<br>';
+      out.scrollTop=out.scrollHeight;
+    });
+  }
+}
+
+
 
 function openShutdown(){createWindow('Shut Down','🔌','<div style="padding:20px;text-align:center"><p style="font-size:14px;margin-bottom:16px">Shut down?</p><button class="error-btn" onclick="spawnError(\'DENIED. You live here now.\')">Shut Down</button> <button class="error-btn" onclick="spawnError(\'Restarting... just kidding.\')">Restart</button> <button class="error-btn" onclick="this.closest(\'.window\').remove()">Cancel</button></div>',280,150);}
 
