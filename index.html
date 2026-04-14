@@ -5,345 +5,204 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Windoze 95++ Simulator</title>
 <style>
-* { margin: 0; padding: 0; box-sizing: border-box; user-select: none; }
-:root {
-  --win-bg: #008080;
-  --win-gray: #c0c0c0;
-  --win-dark: #808080;
-  --win-light: #dfdfdf;
-  --win-blue: #000080;
-  --win-white: #ffffff;
-  --win-black: #000000;
-}
-body {
-  font-family: 'Segoe UI', 'MS Sans Serif', Arial, sans-serif;
-  overflow: hidden;
-  width: 100vw; height: 100vh;
-  background: var(--win-bg);
-}
+*{margin:0;padding:0;box-sizing:border-box;user-select:none}
+:root{--g:#c0c0c0;--d:#808080;--l:#dfdfdf;--b:#000080;--bg:#008080}
+body{font-family:'Segoe UI','MS Sans Serif',Arial,sans-serif;overflow:hidden;width:100vw;height:100vh;background:var(--bg)}
 
-/* ── START SCREEN ── */
-#start-screen {
-  position: fixed; inset: 0; z-index: 9999;
-  background: linear-gradient(135deg, #000080 0%, #1084d0 100%);
-  display: flex; flex-direction: column; align-items: center; justify-content: center;
-  color: white; cursor: pointer;
-}
-#start-screen h1 { font-size: 4em; font-weight: 300; letter-spacing: -2px; text-shadow: 2px 2px 8px rgba(0,0,0,0.5); }
-#start-screen h1 span { font-weight: 700; }
-#start-screen .subtitle { font-size: 1.1em; opacity: 0.7; margin-top: 8px; }
-#start-screen .click-msg { margin-top: 40px; font-size: 1.2em; animation: blink 1.2s infinite; }
-@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
-#start-screen .flag { font-size: 80px; margin-bottom: 20px; }
+/* START SCREEN */
+#start-screen{position:fixed;inset:0;z-index:9999;background:linear-gradient(135deg,#000080,#1084d0);display:flex;flex-direction:column;align-items:center;justify-content:center;color:#fff;cursor:pointer}
+#start-screen h1{font-size:4em;font-weight:300;letter-spacing:-2px;text-shadow:2px 2px 8px rgba(0,0,0,.5)}
+#start-screen h1 span{font-weight:700}
+#start-screen .sub{font-size:1.1em;opacity:.7;margin-top:8px}
+#start-screen .click{margin-top:40px;font-size:1.2em;animation:blink 1.2s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+#start-screen .flag{font-size:80px;margin-bottom:20px}
 
-/* ── DESKTOP ── */
-#desktop {
-  display: none;
-  width: 100vw; height: calc(100vh - 40px);
-  position: relative;
-}
-.desktop-icon {
-  position: absolute; width: 75px; text-align: center;
-  cursor: pointer; padding: 4px; border: 1px solid transparent;
-}
-.desktop-icon:hover { background: rgba(255,255,255,0.15); border: 1px dotted white; }
-.desktop-icon .icon-img { font-size: 36px; display: block; margin: 0 auto; }
-.desktop-icon .icon-label {
-  color: white; font-size: 11px; margin-top: 2px;
-  text-shadow: 1px 1px 2px black; word-wrap: break-word;
-}
+/* BOOT SEQUENCE */
+#boot-screen{display:none;position:fixed;inset:0;z-index:9000;background:#000;color:#fff;flex-direction:column;align-items:center;justify-content:center;font-family:'Courier New',monospace}
+#boot-screen .bios{font-size:12px;color:#aaa;text-align:left;width:500px;max-width:90vw;line-height:1.8}
+#boot-screen .win-load{display:none;flex-direction:column;align-items:center}
+#boot-screen .win-load .logo{font-size:60px;margin-bottom:20px}
+#boot-screen .win-load .title{font-size:1.4em;font-family:'Segoe UI',sans-serif;margin-bottom:20px;color:#fff}
+.boot-bar-outer{width:200px;height:18px;background:#222;border:1px solid #555;border-radius:2px;overflow:hidden}
+.boot-bar-inner{height:100%;background:#0078d7;width:0%;transition:width .3s}
+#boot-screen .boot-sub{font-size:11px;color:#888;margin-top:12px;font-family:'Segoe UI',sans-serif}
 
-/* ── TASKBAR ── */
-#taskbar {
-  display: none; position: fixed; bottom: 0; left: 0; right: 0; height: 40px;
-  background: var(--win-gray); border-top: 2px solid var(--win-light);
-  align-items: center; padding: 2px 4px; z-index: 500;
-}
-#start-btn {
-  background: var(--win-gray); border: 2px outset var(--win-light);
-  padding: 2px 8px; height: 32px; font-size: 13px; font-weight: 700;
-  cursor: pointer; display: flex; align-items: center; gap: 4px;
-}
-#start-btn:active { border-style: inset; }
-#taskbar-clock {
-  margin-left: auto; background: var(--win-gray);
-  border: 2px inset var(--win-dark); padding: 2px 10px;
-  font-size: 12px; height: 28px; display: flex; align-items: center;
-}
-#taskbar-items { display: flex; gap: 2px; margin-left: 8px; flex: 1; }
-.taskbar-item {
-  background: var(--win-gray); border: 2px outset var(--win-light);
-  padding: 2px 8px; font-size: 11px; max-width: 150px;
-  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-  cursor: pointer; height: 28px; display: flex; align-items: center; gap: 4px;
-}
-.taskbar-item.active { border-style: inset; background: #b0b0b0; }
+/* DESKTOP */
+#desktop{display:none;width:100vw;height:calc(100vh - 40px);position:relative}
+#desktop-glitch{position:absolute;inset:0;pointer-events:none;z-index:0;opacity:0;transition:opacity 2s;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(255,0,0,.03) 2px,rgba(255,0,0,.03) 4px)}
+.desktop-icon{position:absolute;width:75px;text-align:center;cursor:pointer;padding:4px;border:1px solid transparent}
+.desktop-icon:hover{background:rgba(255,255,255,.15);border:1px dotted #fff}
+.desktop-icon .icon-img{font-size:36px;display:block;margin:0 auto}
+.desktop-icon .icon-label{color:#fff;font-size:11px;margin-top:2px;text-shadow:1px 1px 2px #000;word-wrap:break-word}
 
-/* ── START MENU ── */
-#start-menu {
-  display: none; position: fixed; bottom: 40px; left: 0;
-  width: 200px; background: var(--win-gray);
-  border: 2px outset var(--win-light); z-index: 600;
-}
-#start-menu .menu-sidebar {
-  position: absolute; left: 0; top: 0; bottom: 0; width: 24px;
-  background: linear-gradient(to top, #000080, #1084d0);
-  display: flex; align-items: flex-end; justify-content: center; padding-bottom: 4px;
-}
-#start-menu .menu-sidebar span {
-  color: white; font-weight: 700; font-size: 12px;
-  writing-mode: vertical-rl; transform: rotate(180deg); letter-spacing: 2px;
-}
-#start-menu .menu-items { margin-left: 24px; }
-.menu-item {
-  padding: 6px 12px; font-size: 13px;
-  cursor: pointer; display: flex; align-items: center; gap: 8px;
-}
-.menu-item:hover { background: var(--win-blue); color: white; }
-.menu-sep { height: 1px; background: var(--win-dark); margin: 2px 0; }
+/* TASKBAR */
+#taskbar{display:none;position:fixed;bottom:0;left:0;right:0;height:40px;background:var(--g);border-top:2px solid var(--l);align-items:center;padding:2px 4px;z-index:500}
+#start-btn{background:var(--g);border:2px outset var(--l);padding:2px 8px;height:32px;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:4px}
+#start-btn:active{border-style:inset}
+#taskbar-clock{margin-left:auto;background:var(--g);border:2px inset var(--d);padding:2px 10px;font-size:12px;height:28px;display:flex;align-items:center}
+#taskbar-items{display:flex;gap:2px;margin-left:8px;flex:1;overflow:hidden}
+.taskbar-item{background:var(--g);border:2px outset var(--l);padding:2px 8px;font-size:11px;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:pointer;height:28px;display:flex;align-items:center;gap:4px}
+.taskbar-item.active{border-style:inset;background:#b0b0b0}
 
-/* ── WINDOWS ── */
-.window {
-  position: absolute; background: var(--win-gray);
-  border: 2px outset var(--win-light);
-  min-width: 250px; min-height: 150px;
-  display: flex; flex-direction: column;
-  box-shadow: 2px 2px 8px rgba(0,0,0,0.3);
-}
-.win-titlebar {
-  background: var(--win-blue); color: white; font-size: 12px; font-weight: 700;
-  padding: 2px 4px; display: flex; align-items: center; cursor: grab;
-}
-.win-titlebar .title-text { flex: 1; padding-left: 4px; display: flex; align-items: center; gap: 4px; }
-.win-btn {
-  width: 18px; height: 16px; background: var(--win-gray);
-  border: 2px outset var(--win-light); font-size: 10px;
-  text-align: center; line-height: 12px; cursor: pointer;
-  margin-left: 1px; font-weight: 700;
-}
-.win-btn:active { border-style: inset; }
-.win-body {
-  flex: 1; background: white; margin: 2px;
-  overflow: auto; font-size: 13px; border: 2px inset var(--win-dark);
-}
-.win-body.gray { background: var(--win-gray); border: none; }
+/* START MENU */
+#start-menu{display:none;position:fixed;bottom:40px;left:0;width:220px;background:var(--g);border:2px outset var(--l);z-index:600}
+#start-menu .sidebar{position:absolute;left:0;top:0;bottom:0;width:24px;background:linear-gradient(to top,#000080,#1084d0);display:flex;align-items:flex-end;justify-content:center;padding-bottom:4px}
+#start-menu .sidebar span{color:#fff;font-weight:700;font-size:12px;writing-mode:vertical-rl;transform:rotate(180deg);letter-spacing:2px}
+#start-menu .items{margin-left:24px}
+.menu-item{padding:6px 12px;font-size:13px;cursor:pointer;display:flex;align-items:center;gap:8px}
+.menu-item:hover{background:var(--b);color:#fff}
+.menu-sep{height:1px;background:var(--d);margin:2px 0}
 
-/* ── ERROR DIALOG ── */
-.error-dialog {
-  position: absolute; z-index: 1000; background: var(--win-gray);
-  border: 2px outset var(--win-light);
-  min-width: 300px; max-width: 420px;
-  box-shadow: 3px 3px 10px rgba(0,0,0,0.4);
-}
-.error-dialog .win-titlebar { background: #aa0000; }
-.error-body { padding: 16px; display: flex; gap: 12px; align-items: flex-start; }
-.error-icon { font-size: 36px; flex-shrink: 0; }
-.error-text { font-size: 12px; line-height: 1.5; }
-.error-buttons { display: flex; gap: 8px; justify-content: center; padding: 8px 16px 12px; }
-.error-btn {
-  background: var(--win-gray); border: 2px outset var(--win-light);
-  padding: 4px 20px; font-size: 12px; cursor: pointer; min-width: 75px;
-}
-.error-btn:active { border-style: inset; }
+/* WINDOWS */
+.window{position:absolute;background:var(--g);border:2px outset var(--l);min-width:240px;min-height:120px;display:flex;flex-direction:column;box-shadow:2px 2px 8px rgba(0,0,0,.3)}
+.win-titlebar{background:var(--b);color:#fff;font-size:12px;font-weight:700;padding:2px 4px;display:flex;align-items:center;cursor:grab}
+.win-titlebar .title-text{flex:1;padding-left:4px;display:flex;align-items:center;gap:4px;overflow:hidden;white-space:nowrap}
+.win-btn{width:18px;height:16px;background:var(--g);border:2px outset var(--l);font-size:10px;text-align:center;line-height:12px;cursor:pointer;margin-left:1px;font-weight:700}
+.win-btn:active{border-style:inset}
+.win-body{flex:1;background:#fff;margin:2px;overflow:auto;font-size:13px;border:2px inset var(--d)}
 
-/* ── BSOD ── */
-#bsod {
-  display: none; position: fixed; inset: 0; z-index: 10000;
-  background: #0000aa; color: white;
-  font-family: 'Courier New', monospace;
-  padding: 40px; font-size: 14px; line-height: 1.6; cursor: pointer;
-}
-#bsod .bsod-title { background: #aaa; color: #0000aa; display: inline; padding: 0 8px; font-weight: 700; }
-#bsod .bsod-restart { margin-top: 40px; animation: blink 1s infinite; }
+/* ERROR */
+.error-dialog{position:absolute;z-index:1000;background:var(--g);border:2px outset var(--l);min-width:300px;max-width:420px;box-shadow:3px 3px 10px rgba(0,0,0,.4)}
+.error-dialog .win-titlebar{background:#aa0000}
+.error-body{padding:16px;display:flex;gap:12px;align-items:flex-start}
+.error-icon{font-size:36px;flex-shrink:0}
+.error-text{font-size:12px;line-height:1.5}
+.error-buttons{display:flex;gap:6px;justify-content:center;padding:8px 16px 12px;flex-wrap:wrap}
+.error-btn{background:var(--g);border:2px outset var(--l);padding:4px 16px;font-size:12px;cursor:pointer;min-width:65px}
+.error-btn:active{border-style:inset}
 
-/* ── GAME OVER ── */
-#gameover {
-  display: none; position: fixed; inset: 0; z-index: 20000;
-  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
-  color: white; flex-direction: column; align-items: center;
-  justify-content: center; text-align: center; padding: 20px;
-}
-#gameover h1 { font-size: 3em; margin-bottom: 10px; }
-#gameover .stats { font-size: 1.2em; opacity: 0.8; margin: 20px 0; line-height: 2; }
-#gameover .restart-btn {
-  margin-top: 20px; padding: 12px 40px; font-size: 1.2em;
-  background: #e94560; color: white; border: none; cursor: pointer; border-radius: 4px;
-}
-#gameover .restart-btn:hover { background: #ff6b81; }
+/* BSOD */
+#bsod{display:none;position:fixed;inset:0;z-index:10000;background:#0000aa;color:#fff;font-family:'Courier New',monospace;padding:40px;font-size:14px;line-height:1.6;cursor:pointer}
+#bsod .bsod-title{background:#aaa;color:#0000aa;display:inline;padding:0 8px;font-weight:700}
+#bsod .bsod-restart{margin-top:40px;animation:blink 1s infinite}
+/* Modern BSOD style */
+#bsod.modern{background:#0078d7;padding:10vh 10vw;font-family:'Segoe UI',sans-serif}
+#bsod.modern .sad{font-size:8em;margin-bottom:20px}
+#bsod.modern .big{font-size:2em;font-weight:300;margin-bottom:15px}
+#bsod.modern .pct{font-size:1.5em;margin:20px 0}
 
-/* ── FORCED UPDATE OVERLAY ── */
-#forced-update {
-  display: none; position: fixed; inset: 0; z-index: 8000;
-  background: #000; color: white;
-  flex-direction: column; align-items: center; justify-content: center;
-  font-family: 'Segoe UI', Arial, sans-serif;
-}
-#forced-update .update-spinner {
-  width: 60px; height: 60px; border: 4px solid #333;
-  border-top: 4px solid #0078d7; border-radius: 50%;
-  animation: spin 1.5s linear infinite; margin-bottom: 30px;
-}
-@keyframes spin { to { transform: rotate(360deg); } }
-#forced-update .update-text { font-size: 1.4em; margin-bottom: 10px; }
-#forced-update .update-sub { font-size: 0.9em; opacity: 0.5; margin-bottom: 30px; }
-#forced-update .update-pct { font-size: 2.5em; font-weight: 300; color: #0078d7; }
+/* FORCED UPDATE */
+#forced-update{display:none;position:fixed;inset:0;z-index:8000;background:#000;color:#fff;flex-direction:column;align-items:center;justify-content:center;font-family:'Segoe UI',sans-serif}
+#forced-update .update-spinner{width:60px;height:60px;border:4px solid #333;border-top:4px solid #0078d7;border-radius:50%;animation:spin 1.5s linear infinite;margin-bottom:30px}
+@keyframes spin{to{transform:rotate(360deg)}}
+#forced-update .update-text{font-size:1.4em;margin-bottom:10px}
+#forced-update .update-sub{font-size:.9em;opacity:.5;margin-bottom:30px}
+#forced-update .update-pct{font-size:2.5em;font-weight:300;color:#0078d7}
 
-/* ── POPUP ADS ── */
-.popup-ad {
-  position: absolute; z-index: 900;
-  background: white; border: 3px solid #ff6600;
-  box-shadow: 4px 4px 12px rgba(0,0,0,0.5);
-  font-family: 'Comic Sans MS', 'Comic Sans', cursive, sans-serif;
-  overflow: hidden; min-width: 260px;
-}
-.popup-ad-header {
-  background: #ff6600; color: white; font-size: 11px;
-  padding: 2px 6px; display: flex; justify-content: space-between; align-items: center;
-}
-.popup-ad-close { cursor: pointer; font-weight: 700; padding: 0 4px; }
-.popup-ad-body {
-  padding: 12px; text-align: center; font-size: 13px; line-height: 1.5;
-}
-.popup-ad-body .big { font-size: 20px; font-weight: 700; color: #ff0000; }
-.popup-ad-body .blink-text { animation: blink 0.5s infinite; color: #ff0000; }
-.popup-ad-body button {
-  margin-top: 8px; padding: 6px 16px; font-size: 13px;
-  background: #00cc00; color: white; border: 2px outset #00aa00;
-  cursor: pointer; font-family: inherit;
-}
-.popup-ad-body button:hover { background: #00ee00; }
-.popup-ad-body .fine-print { font-size: 8px; color: #999; margin-top: 6px; }
+/* POPUP ADS */
+.popup-ad{position:absolute;z-index:900;background:#fff;border:3px solid #f60;box-shadow:4px 4px 12px rgba(0,0,0,.5);font-family:'Comic Sans MS',cursive,sans-serif;overflow:hidden;min-width:250px}
+.popup-ad-header{background:#f60;color:#fff;font-size:11px;padding:2px 6px;display:flex;justify-content:space-between;align-items:center}
+.popup-ad-close{cursor:pointer;font-weight:700;padding:0 4px}
+.popup-ad-body{padding:12px;text-align:center;font-size:13px;line-height:1.5}
+.popup-ad-body .big{font-size:20px;font-weight:700;color:red}
+.popup-ad-body .blink-text{animation:blink .5s infinite;color:red}
+.popup-ad-body button{margin-top:8px;padding:6px 16px;font-size:13px;background:#0c0;color:#fff;border:2px outset #0a0;cursor:pointer;font-family:inherit}
+.popup-ad-body .fine-print{font-size:8px;color:#999;margin-top:6px}
 
-/* ── CURSOR CHAOS ── */
-.cursor-none { cursor: none !important; }
-.cursor-none * { cursor: none !important; }
-.cursor-wait { cursor: wait !important; }
-.cursor-wait * { cursor: wait !important; }
-.cursor-crosshair { cursor: crosshair !important; }
-.cursor-crosshair * { cursor: crosshair !important; }
-#fake-cursor {
-  display: none; position: fixed; z-index: 9500;
-  font-size: 24px; pointer-events: none; transition: none;
-}
-#cursor-trail {
-  display: none; position: fixed; z-index: 9400;
-  pointer-events: none;
-}
-.trail-dot {
-  position: fixed; width: 6px; height: 6px;
-  background: #0078d7; border-radius: 50%;
-  pointer-events: none; opacity: 0.7;
-  transition: opacity 0.5s;
-}
+/* CURSOR */
+.cursor-none,.cursor-none *{cursor:none!important}
+.cursor-wait,.cursor-wait *{cursor:wait!important}
+.cursor-crosshair,.cursor-crosshair *{cursor:crosshair!important}
+#fake-cursor{display:none;position:fixed;z-index:9500;font-size:24px;pointer-events:none}
+.trail-dot{position:fixed;width:6px;height:6px;background:#0078d7;border-radius:50%;pointer-events:none;opacity:.7;transition:opacity .5s}
 
-/* ── MISC ── */
-.notepad-content {
-  width: 100%; height: 100%; border: none;
-  font-family: 'Courier New', monospace; font-size: 13px;
-  padding: 4px; resize: none; outline: none;
-}
-.paint-canvas { cursor: crosshair; }
-.help-content { padding: 12px; font-size: 12px; line-height: 1.7; }
-.help-content h3 { color: var(--win-blue); margin: 8px 0 4px; }
-.settings-panel { padding: 12px; }
-.settings-panel label { display: block; margin: 6px 0; font-size: 12px; cursor: pointer; }
-.settings-panel input[type="range"] { width: 100%; }
-.file-grid { display: grid; grid-template-columns: repeat(auto-fill, 70px); gap: 8px; padding: 12px; }
-.file-item { text-align: center; cursor: pointer; padding: 4px; font-size: 11px; }
-.file-item:hover { background: var(--win-blue); color: white; }
-.file-item .file-icon { font-size: 28px; }
-.recycle-msg { padding: 20px; text-align: center; font-size: 13px; color: #555; }
-.calculator { padding: 8px; }
-.calc-display {
-  background: #d4e4d4; border: 2px inset var(--win-dark);
-  padding: 6px 8px; font-size: 20px; text-align: right;
-  font-family: 'Courier New', monospace; margin-bottom: 6px; min-height: 32px;
-}
-.calc-buttons { display: grid; grid-template-columns: repeat(4, 1fr); gap: 3px; }
-.calc-btn {
-  background: var(--win-gray); border: 2px outset var(--win-light);
-  padding: 8px; font-size: 14px; cursor: pointer; text-align: center;
-}
-.calc-btn:active { border-style: inset; }
-.loading-bar-container { width: 80%; height: 20px; background: white; border: 2px inset var(--win-dark); margin: 12px auto; }
-.loading-bar { height: 100%; width: 0%; background: var(--win-blue); transition: width 0.3s; }
-.loading-text { text-align: center; font-size: 12px; margin-top: 6px; }
+/* GAME OVER */
+#gameover{display:none;position:fixed;inset:0;z-index:20000;background:linear-gradient(135deg,#1a1a2e,#16213e,#0f3460);color:#fff;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:20px}
+#gameover h1{font-size:3em;margin-bottom:10px}
+#gameover .stats{font-size:1.1em;opacity:.8;margin:20px 0;line-height:2.2}
+.restart-btn{margin-top:20px;padding:12px 40px;font-size:1.2em;background:#e94560;color:#fff;border:none;cursor:pointer;border-radius:4px}
+.restart-btn:hover{background:#ff6b81}
 
-@keyframes shake {
-  0%,100%{transform:translate(0)} 10%{transform:translate(-5px,3px)}
-  20%{transform:translate(5px,-3px)} 30%{transform:translate(-3px,5px)}
-  40%{transform:translate(3px,-5px)} 50%{transform:translate(-5px,2px)}
-  60%{transform:translate(5px,-2px)} 70%{transform:translate(-2px,5px)}
-  80%{transform:translate(2px,-5px)} 90%{transform:translate(-3px,3px)}
-}
-.shaking { animation: shake 0.5s ease-in-out; }
+/* CLIPPY */
+#clippy{display:none;position:fixed;bottom:60px;right:20px;z-index:800;cursor:pointer;text-align:center}
+#clippy .clippy-body{font-size:60px}
+#clippy .clippy-bubble{background:#ffc;border:2px solid #333;border-radius:8px;padding:8px 12px;font-size:12px;max-width:200px;margin-bottom:4px;position:relative}
+#clippy .clippy-bubble::after{content:'';position:absolute;bottom:-8px;left:50%;border-left:8px solid transparent;border-right:8px solid transparent;border-top:8px solid #333}
 
-/* ── CLIPPY ── */
-#clippy {
-  display: none; position: fixed; bottom: 60px; right: 20px;
-  z-index: 800; cursor: pointer; text-align: center;
-}
-#clippy .clippy-body { font-size: 60px; }
-#clippy .clippy-bubble {
-  background: #ffffcc; border: 2px solid #333;
-  border-radius: 8px; padding: 8px 12px;
-  font-size: 12px; max-width: 200px; margin-bottom: 4px; position: relative;
-}
-#clippy .clippy-bubble::after {
-  content: ''; position: absolute; bottom: -8px; left: 50%;
-  border-left: 8px solid transparent; border-right: 8px solid transparent;
-  border-top: 8px solid #333;
-}
+/* APP SPECIFIC */
+.notepad-content{width:100%;height:100%;border:none;font-family:'Courier New',monospace;font-size:13px;padding:4px;resize:none;outline:none}
+.paint-canvas{cursor:crosshair}
+.help-content{padding:12px;font-size:12px;line-height:1.7}
+.help-content h3{color:var(--b);margin:8px 0 4px}
+.settings-panel{padding:12px}
+.settings-panel label{display:block;margin:6px 0;font-size:12px;cursor:pointer}
+.settings-panel input[type="range"]{width:100%}
+.file-grid{display:grid;grid-template-columns:repeat(auto-fill,70px);gap:8px;padding:12px}
+.file-item{text-align:center;cursor:pointer;padding:4px;font-size:11px}
+.file-item:hover{background:var(--b);color:#fff}
+.file-item .file-icon{font-size:28px}
+.recycle-msg{padding:20px;text-align:center;font-size:13px;color:#555}
+.calculator{padding:8px}
+.calc-display{background:#d4e4d4;border:2px inset var(--d);padding:6px 8px;font-size:20px;text-align:right;font-family:'Courier New',monospace;margin-bottom:6px;min-height:32px}
+.calc-buttons{display:grid;grid-template-columns:repeat(4,1fr);gap:3px}
+.calc-btn{background:var(--g);border:2px outset var(--l);padding:8px;font-size:14px;cursor:pointer;text-align:center}
+.calc-btn:active{border-style:inset}
+.loading-bar-container{width:80%;height:20px;background:#fff;border:2px inset var(--d);margin:12px auto}
+.loading-bar{height:100%;width:0%;background:var(--b);transition:width .3s}
+.loading-text{text-align:center;font-size:12px;margin-top:6px}
 
-/* ── DESKTOP BG DEGRADATION ── */
-#desktop-glitch {
-  position: absolute; inset: 0; pointer-events: none; z-index: 0;
-  opacity: 0; transition: opacity 2s;
-  background: repeating-linear-gradient(
-    0deg, transparent, transparent 2px, rgba(255,0,0,0.03) 2px, rgba(255,0,0,0.03) 4px
-  );
-}
+/* RAM DOWNLOAD */
+.ram-window{font-size:12px}
+.ram-window .ram-header{text-align:center;padding:12px;background:linear-gradient(to bottom,#1a5276,#2e86c1);color:#fff}
+.ram-window .ram-header h2{font-size:16px;margin-bottom:4px}
+.ram-window .ram-stats{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:12px}
+.ram-window .ram-stat{background:#f0f0f0;border:2px inset #999;padding:8px;text-align:center}
+.ram-window .ram-stat .val{font-size:18px;font-weight:700;color:#2e86c1;font-family:'Courier New',monospace}
+.ram-window .ram-stat .lbl{font-size:10px;color:#666;margin-top:2px}
+.ram-window .ram-progress{padding:0 12px 12px}
+.ram-window .ram-bar-outer{width:100%;height:22px;background:#fff;border:2px inset #999;position:relative}
+.ram-window .ram-bar-inner{height:100%;background:linear-gradient(90deg,#2ecc71,#27ae60);transition:width .3s;width:0%}
+.ram-window .ram-bar-text{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700}
+.ram-window .ram-log{background:#000;color:#0f0;font-family:'Courier New',monospace;font-size:10px;height:70px;overflow-y:auto;padding:4px 8px;margin:0 12px 8px;border:2px inset #333}
+.ram-window .ram-btns{padding:0 12px 12px;display:flex;gap:6px;justify-content:center}
 
-/* ── DOWNLOAD MORE RAM ── */
-.ram-window { font-size: 12px; }
-.ram-window .ram-header { text-align: center; padding: 12px; background: linear-gradient(to bottom, #1a5276, #2e86c1); color: white; }
-.ram-window .ram-header h2 { font-size: 16px; margin-bottom: 4px; }
-.ram-window .ram-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding: 12px; }
-.ram-window .ram-stat { background: #f0f0f0; border: 2px inset #999; padding: 8px; text-align: center; }
-.ram-window .ram-stat .val { font-size: 20px; font-weight: 700; color: #2e86c1; font-family: 'Courier New', monospace; }
-.ram-window .ram-stat .lbl { font-size: 10px; color: #666; margin-top: 2px; }
-.ram-window .ram-progress { padding: 0 12px 12px; }
-.ram-window .ram-bar-outer { width: 100%; height: 22px; background: white; border: 2px inset #999; position: relative; }
-.ram-window .ram-bar-inner { height: 100%; background: linear-gradient(90deg, #2ecc71, #27ae60); transition: width 0.3s; width: 0%; }
-.ram-window .ram-bar-text { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; }
-.ram-window .ram-log { background: #000; color: #0f0; font-family: 'Courier New', monospace; font-size: 10px; height: 80px; overflow-y: auto; padding: 4px 8px; margin: 0 12px 8px; border: 2px inset #333; }
-.ram-window .ram-btns { padding: 0 12px 12px; display: flex; gap: 6px; justify-content: center; }
+/* JOKE APP STYLES */
+.app-body{padding:12px;font-size:12px;line-height:1.6}
+.app-body h3{margin-bottom:8px}
+.app-body p{margin:4px 0}
+.app-body .app-logo{font-size:48px;text-align:center;margin:10px 0}
+.app-body .progress-fake{margin:12px 0}
+.edge-nag{background:#f4f4f4;border:1px solid #ddd;padding:10px;margin:8px 0;border-radius:4px;text-align:center}
+.edge-nag button{margin:4px;padding:4px 12px;font-size:11px;cursor:pointer;border:1px solid #999;background:#fff}
+.edge-nag button.primary{background:#0078d7;color:#fff;border:none;padding:5px 16px}
+.norton-scan{font-family:'Courier New',monospace;background:#000;color:#0f0;padding:8px;font-size:11px;height:120px;overflow-y:auto;border:2px inset #333}
+.uninstall-step{background:#fff3f3;border:1px solid #fcc;padding:8px;margin:6px 0;font-size:11px;border-radius:3px}
+
+@keyframes shake{0%,100%{transform:translate(0)}10%{transform:translate(-5px,3px)}20%{transform:translate(5px,-3px)}30%{transform:translate(-3px,5px)}40%{transform:translate(3px,-5px)}50%{transform:translate(-5px,2px)}60%{transform:translate(5px,-2px)}70%{transform:translate(-2px,5px)}80%{transform:translate(2px,-5px)}90%{transform:translate(-3px,3px)}}
+.shaking{animation:shake .5s ease-in-out}
 </style>
 </head>
 <body>
 
-<!-- START SCREEN -->
 <div id="start-screen">
   <div class="flag">🪟</div>
   <h1><span>Windoze</span> 95++</h1>
-  <div class="subtitle">The Authentic Experience™</div>
-  <div class="click-msg">▶ Click anywhere to start</div>
+  <div class="sub">The Authentic Experience™</div>
+  <div class="click">▶ Click anywhere to start</div>
 </div>
 
-<!-- DESKTOP -->
+<div id="boot-screen">
+  <div class="bios" id="bios-text"></div>
+  <div class="win-load" id="win-load">
+    <div class="logo">🪟</div>
+    <div class="title">Windoze 95++</div>
+    <div class="boot-bar-outer"><div class="boot-bar-inner" id="boot-bar"></div></div>
+    <div class="boot-sub" id="boot-sub">Starting Windoze...</div>
+  </div>
+</div>
+
 <div id="desktop"><div id="desktop-glitch"></div></div>
 
-<!-- TASKBAR -->
 <div id="taskbar">
   <button id="start-btn"><span style="font-size:18px">🪟</span> Start</button>
   <div id="taskbar-items"></div>
   <div id="taskbar-clock"></div>
 </div>
 
-<!-- START MENU -->
 <div id="start-menu">
-  <div class="menu-sidebar"><span>Windoze 95++</span></div>
-  <div class="menu-items">
+  <div class="sidebar"><span>Windoze 95++</span></div>
+  <div class="items">
     <div class="menu-item" data-action="programs">📁 Programs</div>
     <div class="menu-item" data-action="documents">📄 Documents</div>
     <div class="menu-item" data-action="settings">⚙️ Settings</div>
@@ -354,30 +213,33 @@ body {
   </div>
 </div>
 
-<!-- BSOD -->
 <div id="bsod">
-  <p>A problem has been detected and Windoze has been shut down to prevent damage to your computer.</p><br>
-  <p><span class="bsod-title"> SOMETHING_BAD_HAPPENED </span></p><br>
-  <p>If this is the first time you've seen this error screen, it probably won't be the last.</p><br>
-  <p>- Accept that technology has forsaken you</p>
-  <p>- Stare at this screen hoping it fixes itself</p>
-  <p>- Consider a career change</p><br>
-  <p>Technical information:</p>
-  <p>*** STOP: 0x0000DEAD (0xBAADF00D, 0xDEADBEEF, 0xCAFEBABE, 0x8BADF00D)</p>
-  <p>*** error_is_feature.sys - Address 0xNOPE at base 0xLOL</p><br>
-  <p id="bsod-extra"></p>
-  <p class="bsod-restart">Press any key to restart (it won't help, but it's tradition)...</p>
+  <div id="bsod-classic">
+    <p>A problem has been detected and Windoze has been shut down to prevent damage.</p><br>
+    <p><span class="bsod-title"> SOMETHING_BAD_HAPPENED </span></p><br>
+    <p>- Accept that technology has forsaken you</p>
+    <p>- Stare at this screen hoping it fixes itself</p>
+    <p>- Consider a career change</p><br>
+    <p>*** STOP: 0x0000DEAD (0xBAADF00D, 0xDEADBEEF, 0xCAFEBABE)</p>
+    <p>*** <span id="bsod-file">error_is_feature.sys</span></p><br>
+    <p id="bsod-extra"></p>
+  </div>
+  <div id="bsod-modern" style="display:none">
+    <div class="sad">:(</div>
+    <div class="big">Your PC ran into a problem and needs to restart.</div>
+    <div>We're just collecting some error info, and then we'll restart for you.</div>
+    <div class="pct" id="bsod-pct">0% complete</div>
+    <div style="margin-top:20px;font-size:.8em;opacity:.6">If you'd like to know more, you can search online later for: <span id="bsod-code">CRITICAL_PROCESS_DIED</span></div>
+  </div>
 </div>
 
-<!-- FORCED UPDATE -->
 <div id="forced-update">
   <div class="update-spinner"></div>
   <div class="update-text" id="update-text">Working on updates...</div>
-  <div class="update-sub">Don't turn off your computer (not that you can)</div>
+  <div class="update-sub">Don't turn off your computer</div>
   <div class="update-pct" id="update-pct">0%</div>
 </div>
 
-<!-- GAME OVER -->
 <div id="gameover">
   <h1>💀 SYSTEM DESTROYED</h1>
   <div class="stats">
@@ -385,1005 +247,743 @@ body {
     <p>Errors encountered: <span id="go-errors">0</span></p>
     <p>Blue screens: <span id="go-bsods">0</span></p>
     <p>Popups closed: <span id="go-popups">0</span></p>
-    <p>Forced updates endured: <span id="go-updates">0</span></p>
-    <p>Stability rating: <span id="go-rating">F---</span></p>
+    <p>Forced reboots: <span id="go-updates">0</span></p>
+    <p>Stability: <span id="go-rating">F---</span></p>
   </div>
-  <button class="restart-btn" id="restart-btn">🔄 Try Again (it won't be different)</button>
+  <button class="restart-btn" id="restart-btn">🔄 Try Again</button>
 </div>
 
-<!-- CLIPPY -->
 <div id="clippy">
-  <div class="clippy-bubble" id="clippy-text">It looks like you're trying to use a computer!</div>
+  <div class="clippy-bubble" id="clippy-text"></div>
   <div class="clippy-body">📎</div>
 </div>
 
-<!-- FAKE CURSOR -->
 <div id="fake-cursor">🖱️</div>
 
 <script>
-// ═══════════════ GAME STATE ═══════════════
-const S = {
-  started: false, startTime: 0, gameOver: false,
-  errorCount: 0, bsodCount: 0, stability: 100,
-  popupsClosed: 0, updatesEndured: 0,
-  windows: [], windowIdCounter: 0, zCounter: 100,
-  clippyTimeout: null,
-  // ── DIFFICULTY PHASES ──
-  // Phase 0: Honeymoon (0-40s) — everything works fine, ~8% error chance
-  // Phase 1: Cracks (40-80s) — ~18% errors, first popup ad, subtle cursor wobble
-  // Phase 2: Deteriorating (80-130s) — ~30% errors, forced update, popups multiply, cursor gets weird
-  // Phase 3: Meltdown (130-180s) — ~45% errors, bg degradation, constant chaos
-  // Phase 4: Nuclear (180s+) — ~60%+ errors, everything at once, rapid escalation
-  phase: 0,
-  phaseThresholds: [0, 40, 80, 130, 180],
-  phaseErrorChance: [0.08, 0.18, 0.30, 0.45, 0.60],
-  updateActive: false,
-  cursorChaosActive: false, cursorMode: 'normal',
-  trailDots: [],
+// ═══════════════ SOUND ENGINE ═══════════════
+// Synthesized Windows-like sounds using Web Audio API
+const SFX = {
+  ctx: null,
+  init() { if(!this.ctx) this.ctx = new (window.AudioContext||window.webkitAudioContext)(); return this.ctx; },
+
+  // Windows 95-style startup chime (the famous ascending chord)
+  startup() {
+    try {
+      const c = this.init();
+      const masterGain = c.createGain(); masterGain.gain.value = 0.12; masterGain.connect(c.destination);
+      // The famous 4-note ascending chord
+      const notes = [
+        {f:523.25,t:0,d:0.6,type:'sine'},     // C5
+        {f:659.25,t:0.15,d:0.55,type:'sine'},  // E5
+        {f:783.99,t:0.3,d:0.5,type:'sine'},    // G5
+        {f:1046.5,t:0.5,d:0.8,type:'sine'},    // C6
+      ];
+      // Add shimmer harmonics
+      notes.forEach(n => {
+        [1, 1.5, 2].forEach((harm, hi) => {
+          const o = c.createOscillator(), g = c.createGain();
+          o.connect(g); g.connect(masterGain);
+          o.frequency.value = n.f * harm;
+          o.type = hi === 0 ? n.type : 'triangle';
+          g.gain.setValueAtTime(hi === 0 ? 0.5 : 0.15 / (hi+1), c.currentTime + n.t);
+          g.gain.exponentialRampToValueAtTime(0.001, c.currentTime + n.t + n.d);
+          o.start(c.currentTime + n.t); o.stop(c.currentTime + n.t + n.d + 0.1);
+        });
+      });
+    } catch(e){}
+  },
+
+  // Windows error "ding" — the classic two-tone
+  error() {
+    try {
+      const c = this.init();
+      // Low thud then higher ding
+      [[300,0,'square',0.12],[420,0.08,'square',0.12]].forEach(([f,t,type,vol]) => {
+        const o=c.createOscillator(),g=c.createGain();
+        o.connect(g);g.connect(c.destination);
+        o.frequency.value=f;o.type=type;
+        g.gain.setValueAtTime(vol,c.currentTime+t);
+        g.gain.exponentialRampToValueAtTime(0.001,c.currentTime+t+0.18);
+        o.start(c.currentTime+t);o.stop(c.currentTime+t+0.2);
+      });
+    } catch(e){}
+  },
+
+  // Critical stop — harsh chord
+  critical() {
+    try {
+      const c = this.init();
+      [200,250,180].forEach(f => {
+        const o=c.createOscillator(),g=c.createGain();
+        o.connect(g);g.connect(c.destination);
+        o.frequency.value=f;o.type='sawtooth';
+        g.gain.setValueAtTime(0.08,c.currentTime);
+        g.gain.exponentialRampToValueAtTime(0.001,c.currentTime+0.5);
+        o.start();o.stop(c.currentTime+0.5);
+      });
+    } catch(e){}
+  },
+
+  // BSOD — long ominous drone
+  bsod() {
+    try {
+      const c = this.init();
+      const o=c.createOscillator(),g=c.createGain();
+      o.connect(g);g.connect(c.destination);
+      o.frequency.value=100;o.type='sawtooth';
+      g.gain.setValueAtTime(0.15,c.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.001,c.currentTime+2.5);
+      o.start();o.stop(c.currentTime+2.5);
+      // Add a second dissonant tone
+      const o2=c.createOscillator(),g2=c.createGain();
+      o2.connect(g2);g2.connect(c.destination);
+      o2.frequency.value=103;o2.type='square';
+      g2.gain.setValueAtTime(0.06,c.currentTime);
+      g2.gain.exponentialRampToValueAtTime(0.001,c.currentTime+2.5);
+      o2.start();o2.stop(c.currentTime+2.5);
+    } catch(e){}
+  },
+
+  // Shutdown — descending tones (reverse of startup)
+  shutdown() {
+    try {
+      const c = this.init();
+      const notes = [{f:784,t:0},{f:659,t:0.2},{f:523,t:0.4},{f:392,t:0.6}];
+      notes.forEach(n => {
+        const o=c.createOscillator(),g=c.createGain();
+        o.connect(g);g.connect(c.destination);
+        o.frequency.value=n.f;o.type='sine';
+        g.gain.setValueAtTime(0.1,c.currentTime+n.t);
+        g.gain.exponentialRampToValueAtTime(0.001,c.currentTime+n.t+0.4);
+        o.start(c.currentTime+n.t);o.stop(c.currentTime+n.t+0.5);
+      });
+    } catch(e){}
+  },
+
+  // Notification pop
+  notify() {
+    try {
+      const c = this.init();
+      [[800,0],[1000,0.08]].forEach(([f,t])=>{
+        const o=c.createOscillator(),g=c.createGain();
+        o.connect(g);g.connect(c.destination);
+        o.frequency.value=f;o.type='sine';
+        g.gain.setValueAtTime(0.06,c.currentTime+t);
+        g.gain.exponentialRampToValueAtTime(0.001,c.currentTime+t+0.15);
+        o.start(c.currentTime+t);o.stop(c.currentTime+t+0.2);
+      });
+    } catch(e){}
+  },
+
+  // Click
+  click() {
+    try {
+      const c = this.init();
+      const o=c.createOscillator(),g=c.createGain();
+      o.connect(g);g.connect(c.destination);
+      o.frequency.value=1000;o.type='square';
+      g.gain.setValueAtTime(0.04,c.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.001,c.currentTime+0.03);
+      o.start();o.stop(c.currentTime+0.04);
+    } catch(e){}
+  },
+
+  // Boot POST beep
+  post() {
+    try {
+      const c = this.init();
+      const o=c.createOscillator(),g=c.createGain();
+      o.connect(g);g.connect(c.destination);
+      o.frequency.value=1000;o.type='square';
+      g.gain.setValueAtTime(0.08,c.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.001,c.currentTime+0.15);
+      o.start();o.stop(c.currentTime+0.2);
+    } catch(e){}
+  },
 };
 
-function elapsed() { return (Date.now() - S.startTime) / 1000; }
+// ═══════════════ GAME STATE ═══════════════
+const S = {
+  started:false, startTime:0, gameOver:false,
+  errorCount:0, bsodCount:0, stability:100,
+  popupsClosed:0, updatesEndured:0,
+  windows:[], windowIdCounter:0, zCounter:100,
+  clippyTimeout:null,
+  phase:0,
+  phaseThresholds:[0,45,90,140,190],
+  phaseErrorChance:[0.08,0.16,0.28,0.42,0.58],
+  updateActive:false, cursorChaosActive:false, cursorMode:'normal',
+  trailDots:[], booting:false,
+};
 
-function currentPhase() {
-  const t = elapsed();
-  for (let i = S.phaseThresholds.length - 1; i >= 0; i--) {
-    if (t >= S.phaseThresholds[i]) return i;
-  }
-  return 0;
+function elapsed(){return(Date.now()-S.startTime)/1000;}
+function currentPhase(){const t=elapsed();for(let i=S.phaseThresholds.length-1;i>=0;i--){if(t>=S.phaseThresholds[i])return i;}return 0;}
+function shouldError(){
+  const base=S.phaseErrorChance[Math.min(S.phase,S.phaseErrorChance.length-1)];
+  const extra=(elapsed()-S.phaseThresholds[S.phase])*0.0008;
+  return Math.random()<Math.min(base+extra,0.72);
 }
-
-function shouldError() {
-  const base = S.phaseErrorChance[Math.min(S.phase, S.phaseErrorChance.length - 1)];
-  // tiny extra escalation within phase
-  const extra = (elapsed() - S.phaseThresholds[S.phase]) * 0.001;
-  return Math.random() < Math.min(base + extra, 0.75);
-}
-
-// ═══════════════ UTILS ═══════════════
 function rand(a,b){return Math.random()*(b-a)+a;}
 function randInt(a,b){return Math.floor(rand(a,b+1));}
 function pick(a){return a[randInt(0,a.length-1)];}
+function screenShake(){document.body.classList.add('shaking');setTimeout(()=>document.body.classList.remove('shaking'),500);}
+function updateClock(){const n=new Date(),h=n.getHours()%12||12;document.getElementById('taskbar-clock').textContent=`${h}:${String(n.getMinutes()).padStart(2,'0')} ${n.getHours()>=12?'PM':'AM'}`;}
 
-function screenShake(){
-  document.body.classList.add('shaking');
-  setTimeout(()=>document.body.classList.remove('shaking'),500);
+// ═══════════════ BOOT SEQUENCE ═══════════════
+function showBootSequence(onComplete, isRestart) {
+  S.booting = true;
+  const boot = document.getElementById('boot-screen');
+  const bios = document.getElementById('bios-text');
+  const winLoad = document.getElementById('win-load');
+  const bootBar = document.getElementById('boot-bar');
+  const bootSub = document.getElementById('boot-sub');
+
+  // Hide everything
+  document.getElementById('desktop').style.display = 'none';
+  document.getElementById('taskbar').style.display = 'none';
+  document.getElementById('bsod').style.display = 'none';
+  document.getElementById('forced-update').style.display = 'none';
+  document.getElementById('start-menu').style.display = 'none';
+  boot.style.display = 'flex';
+  bios.style.display = 'block';
+  winLoad.style.display = 'none';
+  bios.innerHTML = '';
+  bootBar.style.width = '0%';
+
+  // BIOS POST
+  const biosLines = [
+    'AMIBIOS (C) 1995 American Megatrends Inc.',
+    'Windoze 95++ BIOS v4.20.69',
+    '',
+    'CPU: Intel Pentium™ 133MHz ... ' + (isRestart ? 'Confused' : 'OK'),
+    'Memory Test: ' + randInt(16,64) + 'MB ' + (isRestart ? 'QUESTIONABLE' : 'OK'),
+    'Primary Master: QUANTUM FIREBALL 1.2GB ... ' + (isRestart ? 'Scared' : 'OK'),
+    'Primary Slave: NONE (it escaped)',
+    'CD-ROM: GENERIC 4X ... ' + (isRestart ? 'Missing' : 'OK'),
+    '',
+    isRestart ? 'Previous shutdown: CATASTROPHIC' : 'All systems nominal (for now)',
+    '',
+    'Press DEL to enter Setup (it won\'t help)',
+    'Press F8 for Safe Mode (there is no safe mode)',
+    '',
+    'Booting from C:\\...',
+  ];
+
+  SFX.post();
+  let lineIdx = 0;
+  const biosIv = setInterval(() => {
+    if(lineIdx < biosLines.length) {
+      bios.innerHTML += biosLines[lineIdx] + '<br>';
+      bios.scrollTop = bios.scrollHeight;
+      lineIdx++;
+    } else {
+      clearInterval(biosIv);
+      // Transition to Windows loading screen
+      setTimeout(() => {
+        bios.style.display = 'none';
+        winLoad.style.display = 'flex';
+        let pct = 0;
+        const loadMsgs = ['Starting Windoze...','Loading system files...','Initializing desktop...','Loading your mistakes...','Preparing errors...','Almost ready...'];
+        const loadIv = setInterval(() => {
+          pct += randInt(3, 12);
+          if(pct > 100) pct = 100;
+          bootBar.style.width = pct + '%';
+          if(Math.random() < 0.2) bootSub.textContent = pick(loadMsgs);
+          if(pct >= 100) {
+            clearInterval(loadIv);
+            setTimeout(() => {
+              boot.style.display = 'none';
+              S.booting = false;
+              if(onComplete) onComplete();
+            }, 600);
+          }
+        }, 150);
+      }, 500);
+    }
+  }, 120);
 }
 
-function playErrorSound(){
-  try{
-    const c=new(window.AudioContext||window.webkitAudioContext)();
-    const o=c.createOscillator(),g=c.createGain();
-    o.connect(g);g.connect(c.destination);
-    o.frequency.value=400;o.type='square';g.gain.value=0.1;
-    o.start();o.stop(c.currentTime+0.15);
-    setTimeout(()=>{
-      const o2=c.createOscillator(),g2=c.createGain();
-      o2.connect(g2);g2.connect(c.destination);
-      o2.frequency.value=300;o2.type='square';g2.gain.value=0.1;
-      o2.start();o2.stop(c.currentTime+0.15);
-    },150);
-  }catch(e){}
-}
-
-function playStartupSound(){
-  try{
-    const c=new(window.AudioContext||window.webkitAudioContext)();
-    [523,659,784,1047].forEach((f,i)=>{
-      const o=c.createOscillator(),g=c.createGain();
-      o.connect(g);g.connect(c.destination);
-      o.frequency.value=f;o.type='sine';g.gain.value=0.08;
-      o.start(c.currentTime+i*0.2);o.stop(c.currentTime+i*0.2+0.3);
-    });
-  }catch(e){}
-}
-
-function playBSODSound(){
-  try{
-    const c=new(window.AudioContext||window.webkitAudioContext)();
-    const o=c.createOscillator(),g=c.createGain();
-    o.connect(g);g.connect(c.destination);
-    o.frequency.value=150;o.type='sawtooth';g.gain.value=0.15;
-    g.gain.exponentialRampToValueAtTime(0.001,c.currentTime+1.5);
-    o.start();o.stop(c.currentTime+1.5);
-  }catch(e){}
-}
-
-function updateClock(){
-  const n=new Date(),h=n.getHours()%12||12;
-  const m=String(n.getMinutes()).padStart(2,'0');
-  document.getElementById('taskbar-clock').textContent=`${h}:${m} ${n.getHours()>=12?'PM':'AM'}`;
-}
-
-// ═══════════════ ERROR MESSAGES ═══════════════
-const errorMessages = [
-  "An error occurred while processing your error. Error-ception!",
-  "The operation completed successfully. Just kidding.",
-  "Your click was intercepted by a rogue pixel.",
-  "Task failed successfully. No, really.",
+// ═══════════════ MESSAGES ═══════════════
+const errorMessages=[
+  "An error occurred while processing your error.","The operation completed successfully. Just kidding.",
+  "Your click was intercepted by a rogue pixel.","Task failed successfully.",
   "The system ran out of memory trying to remember what you clicked.",
   "A cosmic ray has flipped a bit. This is now your problem.",
-  "Windows is searching for a solution... and has given up.",
-  "Error 404: Your patience not found.",
-  "Something happened. 🤷",
-  "The application has stopped responding to your hopes and dreams.",
-  "An unexpected error has expectedly occurred.",
-  "Fatal error: Everything is fine. (It's not fine.)",
-  "Your mouse click was lost in transit. Please try again in 3-5 business days.",
-  "This feature requires a license that doesn't exist.",
-  "The printer is on fire. You don't have a printer? Doesn't matter.",
-  "Stack overflow in module 'patience.dll'",
-  "Cannot divide by zero. Cannot divide by anything. Math is cancelled.",
-  "Your file has been saved to /dev/null for safekeeping.",
+  "Error 404: Your patience not found.","Something happened. 🤷",
+  "An unexpected error has expectedly occurred.","Fatal error: Everything is fine. (It's not fine.)",
+  "Your mouse click was lost in transit.","The printer is on fire.",
+  "Stack overflow in module 'patience.dll'","Your file has been saved to /dev/null.",
   "Access denied. Access to what? We're not telling.",
   "Warning: The warning system has encountered a warning.",
-  "Error loading error message. Please enjoy this error instead.",
-  "The cloud is full. Please try the fog.",
-  "Insufficient RAM. Insufficient patience. Insufficient everything.",
-  "guru meditation #00000004.0000AAC0",
-  "PC LOAD LETTER",
+  "The cloud is full. Please try the fog.","PC LOAD LETTER",
   "Keyboard not detected. Press F1 to continue.",
-  "ERROR: Success! Wait, no. Error.",
-  "The system has performed an illegal operation and will be prosecuted.",
   "This incident will be reported. To whom? Nobody knows.",
-  "Oops! Something went wrong. Oops! That message also went wrong.",
+  "guru meditation #00000004.0000AAC0","ERROR: Success! Wait, no.",
 ];
-const errorTitles = [
-  "windoze.exe","explorer.exe","definitely_not_a_virus.exe","system32.dll",
-  "critical_process.exe","mouse.drv","keyboard.sys","existence.dll",
-  "hope.exe","sanity.dll","patience.exe","reality.sys",
+const errorTitles=["windoze.exe","explorer.exe","definitely_not_a_virus.exe","system32.dll","critical_process.exe","mouse.drv","existence.dll","hope.exe","sanity.dll","reality.sys","adobe_updater.exe","edge_helper.exe","norton_scan.exe"];
+const clippyMessages=["It looks like you're trying to use a computer.","I see you clicked something. Bold.","Did you try turning it off and never turning it back on?","I'm not going to help you.","You seem stressed. Close the laptop.","Fun fact: every click is a gamble.","It looks like you're writing a letter. PSYCHE.","Remember: help is not available."];
+const clippyPhase=[
+  ["Welcome! Everything works perfectly. For now... 😊","Looks like a great day to compute!"],
+  ["Hmm, did something flicker?","I'm sure that error was a one-time thing..."],
+  ["Things are getting dicey...","I'd recommend saving. Oh wait, save is broken."],
+  ["ABANDON SHIP","I regret being a paperclip.","WHY ARE YOU STILL HERE"],
+  ["..........","💀💀💀","Tell my family I was a good paperclip."],
 ];
-const clippyMessages = [
-  "It looks like you're trying to use a computer. Would you like to fail at that?",
-  "I see you clicked something. Bold strategy.",
-  "Did you try turning it off and never turning it back on?",
-  "I'm not going to help you, I just wanted to pop up.",
-  "You seem stressed. Have you considered closing the laptop?",
-  "I'm contractually obligated to appear. Sorry about that.",
-  "It looks like you're writing a letter. PSYCHE — error time!",
-  "Hey! Just checking in. Everything is absolutely not fine.",
-  "Remember: help is always just... not available.",
-  "According to my calculations, you're doomed.",
-  "Have you tried not clicking things?",
-  "Fun fact: things get worse from here.",
-  "I'd help but I literally can't.",
-];
-
-// Phase-aware clippy messages
-const clippyPhaseMessages = [
-  ["Welcome! Everything is working perfectly. For now... 😊","Looks like a great day to use a computer!","Need help? Just kidding, I'm useless. But everything's fine!"],
-  ["Hmm, did something just flicker?","I'm sure that error was a one-time thing...","Is it getting warm in here?"],
-  ["Okay things are getting a little dicey...","I'd recommend saving your work. Oh wait, save is broken.","This is fine. 🔥"],
-  ["ABANDON SHIP","I regret being a paperclip.","We're all going to die. Digitally speaking.","WHY ARE YOU STILL HERE"],
-  ["..........","💀💀💀","The end is near. The end is HERE.","Tell my family I was a good paperclip."],
-];
+const bsodCodes=["CRITICAL_PROCESS_DIED","IRQL_NOT_LESS_OR_EQUAL","KERNEL_SECURITY_CHECK_FAILURE","SYSTEM_THREAD_EXCEPTION","DPC_WATCHDOG_VIOLATION","MEMORY_MANAGEMENT","PAGE_FAULT_IN_NONPAGED_AREA","WHEA_UNCORRECTABLE_ERROR","UNEXPECTED_STORE_EXCEPTION","KMODE_EXCEPTION_NOT_HANDLED"];
+const bsodFiles=["error_is_feature.sys","ntoskrnl.exe","your_fault.sys","adobe_updater.sys","hope.dll","clippy.drv","patience.sys","sanity.dll"];
 
 // ═══════════════ WINDOW MANAGER ═══════════════
-function createWindow(title,icon,content,width,height){
-  if(S.gameOver)return null;
+function createWindow(title,icon,content,w,h){
+  if(S.gameOver||S.booting)return null;
+  SFX.click();
   const id=++S.windowIdCounter;
   const d=document.getElementById('desktop');
-  const mx=Math.max(50,d.clientWidth-width-20);
-  const my=Math.max(50,d.clientHeight-height-20);
-  const w=document.createElement('div');
-  w.className='window';w.id=`win-${id}`;
-  w.style.width=width+'px';w.style.height=height+'px';
-  w.style.left=randInt(30,mx)+'px';w.style.top=randInt(10,my)+'px';
-  w.style.zIndex=++S.zCounter;
-  w.innerHTML=`
-    <div class="win-titlebar" data-winid="${id}">
-      <div class="title-text">${icon} ${title}</div>
-      <div class="win-btn" data-action="minimize" data-winid="${id}">_</div>
-      <div class="win-btn" data-action="maximize" data-winid="${id}">□</div>
-      <div class="win-btn" data-action="close" data-winid="${id}">✕</div>
-    </div>
-    <div class="win-body">${content}</div>`;
-  d.appendChild(w);
-  S.windows.push({id,title,icon,el:w,minimized:false});
-  updateTaskbarItems();
-  makeDraggable(w,id);
-  w.querySelectorAll('.win-btn').forEach(b=>{
-    b.addEventListener('click',e=>{
-      e.stopPropagation();
-      const a=b.dataset.action,wid=parseInt(b.dataset.winid);
-      if(shouldError()){spawnError();return;}
-      if(a==='close')closeWindow(wid);
-      else if(a==='minimize')minimizeWindow(wid);
-      else if(a==='maximize')maximizeWindow(wid);
-    });
-  });
-  w.addEventListener('mousedown',()=>{w.style.zIndex=++S.zCounter;});
-  return{id,el:w};
+  const mx=Math.max(50,d.clientWidth-w-20),my=Math.max(50,d.clientHeight-h-20);
+  const el=document.createElement('div');
+  el.className='window';el.id=`win-${id}`;
+  el.style.cssText=`width:${w}px;height:${h}px;left:${randInt(30,mx)}px;top:${randInt(10,my)}px;z-index:${++S.zCounter}`;
+  el.innerHTML=`<div class="win-titlebar"><div class="title-text">${icon} ${title}</div><div class="win-btn" data-a="min" data-w="${id}">_</div><div class="win-btn" data-a="max" data-w="${id}">□</div><div class="win-btn" data-a="close" data-w="${id}">✕</div></div><div class="win-body">${content}</div>`;
+  d.appendChild(el);
+  S.windows.push({id,title,icon,el,minimized:false});
+  updateTaskbar();
+  makeDrag(el);
+  el.querySelectorAll('.win-btn').forEach(b=>b.addEventListener('click',e=>{
+    e.stopPropagation();const a=b.dataset.a,wid=+b.dataset.w;
+    if(shouldError()){spawnError();return;}
+    if(a==='close')closeWin(wid);else if(a==='min')minWin(wid);else maxWin(wid);
+  }));
+  el.addEventListener('mousedown',()=>{el.style.zIndex=++S.zCounter;});
+  return{id,el};
 }
-function closeWindow(id){
-  const i=S.windows.findIndex(w=>w.id===id);
-  if(i===-1)return;S.windows[i].el.remove();S.windows.splice(i,1);updateTaskbarItems();
-}
-function minimizeWindow(id){
-  const w=S.windows.find(w=>w.id===id);if(!w)return;
-  w.minimized=true;w.el.style.display='none';updateTaskbarItems();
-}
-function maximizeWindow(id){
-  const w=S.windows.find(w=>w.id===id);if(!w)return;
-  const d=document.getElementById('desktop');
-  w.el.style.left='0';w.el.style.top='0';
-  w.el.style.width=d.clientWidth+'px';w.el.style.height=d.clientHeight+'px';
-}
-function restoreWindow(id){
-  const w=S.windows.find(w=>w.id===id);if(!w)return;
-  w.minimized=false;w.el.style.display='flex';w.el.style.zIndex=++S.zCounter;updateTaskbarItems();
-}
-function updateTaskbarItems(){
+function closeWin(id){const i=S.windows.findIndex(w=>w.id===id);if(i<0)return;S.windows[i].el.remove();S.windows.splice(i,1);updateTaskbar();}
+function minWin(id){const w=S.windows.find(w=>w.id===id);if(!w)return;w.minimized=true;w.el.style.display='none';updateTaskbar();}
+function maxWin(id){const w=S.windows.find(w=>w.id===id);if(!w)return;const d=document.getElementById('desktop');w.el.style.cssText=`left:0;top:0;width:${d.clientWidth}px;height:${d.clientHeight}px;z-index:${++S.zCounter};display:flex`;}
+function restoreWin(id){const w=S.windows.find(w=>w.id===id);if(!w)return;w.minimized=false;w.el.style.display='flex';w.el.style.zIndex=++S.zCounter;updateTaskbar();}
+function updateTaskbar(){
   const c=document.getElementById('taskbar-items');c.innerHTML='';
   S.windows.forEach(w=>{
-    const t=document.createElement('div');
-    t.className='taskbar-item'+(w.minimized?'':' active');
+    const t=document.createElement('div');t.className='taskbar-item'+(w.minimized?'':' active');
     t.textContent=w.icon+' '+w.title;
-    t.addEventListener('click',()=>{
-      if(shouldError()){spawnError();return;}
-      if(w.minimized)restoreWindow(w.id);else w.el.style.zIndex=++S.zCounter;
-    });
+    t.addEventListener('click',()=>{if(shouldError()){spawnError();return;}if(w.minimized)restoreWin(w.id);else w.el.style.zIndex=++S.zCounter;});
     c.appendChild(t);
   });
 }
-function makeDraggable(w){
-  const tb=w.querySelector('.win-titlebar');
-  let dr=false,ox,oy;
-  const onDown=(cx,cy)=>{dr=true;ox=cx-w.offsetLeft;oy=cy-w.offsetTop;w.style.zIndex=++S.zCounter;};
-  const onMove=(cx,cy)=>{if(!dr)return;w.style.left=(cx-ox)+'px';w.style.top=(cy-oy)+'px';};
-  const onUp=()=>{dr=false;};
-  tb.addEventListener('mousedown',e=>{if(e.target.classList.contains('win-btn'))return;onDown(e.clientX,e.clientY);});
-  document.addEventListener('mousemove',e=>{onMove(e.clientX,e.clientY);});
-  document.addEventListener('mouseup',onUp);
-  tb.addEventListener('touchstart',e=>{if(e.target.classList.contains('win-btn'))return;onDown(e.touches[0].clientX,e.touches[0].clientY);});
-  document.addEventListener('touchmove',e=>{if(!dr)return;onMove(e.touches[0].clientX,e.touches[0].clientY);});
-  document.addEventListener('touchend',onUp);
+function makeDrag(w){
+  const tb=w.querySelector('.win-titlebar');let dr=false,ox,oy;
+  const down=(x,y)=>{dr=true;ox=x-w.offsetLeft;oy=y-w.offsetTop;w.style.zIndex=++S.zCounter;};
+  const move=(x,y)=>{if(!dr)return;w.style.left=(x-ox)+'px';w.style.top=(y-oy)+'px';};
+  const up=()=>{dr=false;};
+  tb.addEventListener('mousedown',e=>{if(e.target.classList.contains('win-btn'))return;down(e.clientX,e.clientY);});
+  document.addEventListener('mousemove',e=>move(e.clientX,e.clientY));
+  document.addEventListener('mouseup',up);
+  tb.addEventListener('touchstart',e=>{if(e.target.classList.contains('win-btn'))return;down(e.touches[0].clientX,e.touches[0].clientY);},{passive:true});
+  document.addEventListener('touchmove',e=>{if(dr)move(e.touches[0].clientX,e.touches[0].clientY);},{passive:true});
+  document.addEventListener('touchend',up);
 }
 
 // ═══════════════ ERROR SYSTEM ═══════════════
 function spawnError(customMsg){
-  if(S.gameOver||S.updateActive)return;
+  if(S.gameOver||S.updateActive||S.booting)return;
   S.errorCount++;
-  const dmg = S.phase <= 1 ? randInt(2,5) : randInt(4,12);
-  S.stability -= dmg;
-  if(S.phase >= 2) screenShake();
-  playErrorSound();
-  const msg=customMsg||pick(errorMessages);
-  const title=pick(errorTitles);
-  const d=document.getElementById('desktop');
-  const dlg=document.createElement('div');
+  S.stability-=S.phase<=1?randInt(2,5):randInt(4,12);
+  if(S.phase>=2)screenShake();
+  SFX.error();
+  const msg=customMsg||pick(errorMessages),title=pick(errorTitles);
+  const d=document.getElementById('desktop'),dlg=document.createElement('div');
   dlg.className='error-dialog';
-  dlg.style.left=randInt(50,Math.max(100,window.innerWidth-450))+'px';
-  dlg.style.top=randInt(30,Math.max(80,window.innerHeight-250))+'px';
-  dlg.style.zIndex=++S.zCounter;
+  dlg.style.cssText=`left:${randInt(50,Math.max(100,innerWidth-450))}px;top:${randInt(30,Math.max(80,innerHeight-250))}px;z-index:${++S.zCounter}`;
   const icons=['⚠️','❌','🔥','💀','☠️','🚫','💣','🤦'];
-  dlg.innerHTML=`
-    <div class="win-titlebar" style="background:#aa0000">
-      <div class="title-text">❌ ${title}</div>
-      <div class="win-btn" onclick="this.closest('.error-dialog').remove()">✕</div>
-    </div>
-    <div class="error-body">
-      <div class="error-icon">${pick(icons)}</div>
-      <div class="error-text">${msg}</div>
-    </div>
-    <div class="error-buttons" id="err-btns-${dlg.id}"></div>`;
+  dlg.innerHTML=`<div class="win-titlebar" style="background:#a00"><div class="title-text">❌ ${title}</div><div class="win-btn" onclick="this.closest('.error-dialog').remove()">✕</div></div><div class="error-body"><div class="error-icon">${pick(icons)}</div><div class="error-text">${msg}</div></div><div class="error-buttons"></div>`;
   d.appendChild(dlg);
-  buildErrorButtons(dlg);
-  if(S.phase >= 1) showClippy();
-  if(S.stability <= 0) triggerBSOD();
+  buildErrorBtns(dlg);
+  if(S.phase>=1)showClippy();
+  if(S.stability<=0)triggerBSOD();
 }
-function buildErrorButtons(dlg) {
-  const container = dlg.querySelector('.error-buttons');
-  // All possible button labels
-  const allLabels = ['OK','Cancel','Retry','Abort','Ignore','Yes','No','Maybe',
-    'Help','Continue','Stop','Skip','Accept','Decline','Later','Never',
-    'Why','Please','Undo','Oops','Fine','Nope','Sure','Hmm','Panic',
-    'Cry','Scream','LOL','Bruh','Trust Me','Don\'t Click'];
 
-  // Pick 2-5 random buttons depending on phase
-  const count = S.phase <= 1 ? randInt(2,3) : S.phase <= 2 ? randInt(3,4) : randInt(3,5);
-  const shuffled = allLabels.sort(() => Math.random() - 0.5);
-  const labels = shuffled.slice(0, count);
-
-  // Pick one random button as the "safe" one that actually closes
-  const safeIdx = randInt(0, labels.length - 1);
-
-  labels.forEach((label, i) => {
-    const btn = document.createElement('button');
-    btn.className = 'error-btn';
-    btn.textContent = label;
-    if (i === safeIdx) {
-      // Safe button — closes the dialog (but might still chain in late phases)
-      btn.addEventListener('click', () => {
-        dlg.remove();
-        if (S.phase >= 3 && Math.random() < 0.25) {
-          setTimeout(() => spawnError("Wait, that error wasn't done yet."), 600);
-        }
-      });
-    } else {
-      // Trap button — causes more chaos
-      btn.addEventListener('click', () => {
-        const reactions = [
-          "'" + label + "' was the WRONG choice!",
-          "You clicked '" + label + "'? Really? REALLY?",
-          "The '" + label + "' button doesn't do what you think it does.",
-          "'" + label + "' has triggered a secondary error.",
-          "Nice try. '" + label + "' made it worse.",
-          "'" + label + "' was a decoy. They're all decoys. Except one.",
-          "You had a " + Math.round(100/count) + "% chance and you blew it.",
-          "Wrong button! The correct answer was... actually, we're not telling.",
-          "'" + label + "' has unionized and refuses to work.",
-          "Clicking '" + label + "' has angered the error gods.",
-        ];
-        spawnError(pick(reactions));
-        // In later phases, the dialog stays open and reshuffles!
-        if (S.phase >= 2 && Math.random() < 0.4) {
-          buildErrorButtons(dlg); // reshuffle!
-        }
+function buildErrorBtns(dlg){
+  const c=dlg.querySelector('.error-buttons');c.innerHTML='';
+  const all=['OK','Cancel','Retry','Abort','Ignore','Yes','No','Maybe','Help','Continue','Stop','Skip','Accept','Decline','Later','Never','Why','Please','Undo','Oops','Fine','Nope','Sure','Hmm','Panic','Cry','Bruh',"Don't Click",'Trust Me','LOL'];
+  const count=S.phase<=1?randInt(2,3):S.phase<=2?randInt(3,4):randInt(3,5);
+  const labels=all.sort(()=>Math.random()-.5).slice(0,count);
+  const safe=randInt(0,labels.length-1);
+  labels.forEach((l,i)=>{
+    const b=document.createElement('button');b.className='error-btn';b.textContent=l;
+    if(i===safe){
+      b.addEventListener('click',()=>{dlg.remove();if(S.phase>=3&&Math.random()<.25)setTimeout(()=>spawnError("That error wasn't done yet."),600);});
+    }else{
+      b.addEventListener('click',()=>{
+        const msgs=["'"+l+"' was the WRONG choice!","You clicked '"+l+"'? Really?","'"+l+"' made it worse.","You had a "+Math.round(100/count)+"% chance and blew it.","Wrong! The correct answer was... we're not telling.","'"+l+"' has angered the error gods."];
+        spawnError(pick(msgs));
+        if(S.phase>=2&&Math.random()<.4)buildErrorBtns(dlg);
       });
     }
-    container.appendChild(btn);
+    c.appendChild(b);
   });
 }
 
-// ═══════════════ FORCED UPDATE SYSTEM ═══════════════
-const updateMessages = [
-  "Working on updates...", "Installing update 1 of 847...",
-  "Configuring Windoze features...", "Preparing to prepare updates...",
-  "Downloading more RAM...", "Reticulating splines...",
-  "Defragmenting the mainframe...", "Updating the update updater...",
-  "Synergizing the blockchain...", "Please wait. No really, please.",
-  "Installing unnecessary features...", "Removing features you liked...",
-  "Optimizing your frustration...", "Almost done (this is a lie)...",
-];
+// ═══════════════ BSOD WITH REBOOT ═══════════════
+function triggerBSOD(){
+  S.bsodCount++;
+  SFX.bsod();
+  const bsod=document.getElementById('bsod');
+  bsod.style.display='block';
 
-function triggerForcedUpdate() {
-  if(S.gameOver || S.updateActive) return;
-  S.updateActive = true;
-  S.updatesEndured++;
-  const overlay = document.getElementById('forced-update');
-  const pctEl = document.getElementById('update-pct');
-  const textEl = document.getElementById('update-text');
-  overlay.style.display = 'flex';
+  // Alternate between classic and modern BSOD
+  const useModern = S.phase >= 2 && Math.random() < 0.6;
+  document.getElementById('bsod-classic').style.display = useModern ? 'none' : 'block';
+  document.getElementById('bsod-modern').style.display = useModern ? 'block' : 'none';
 
-  let pct = 0;
-  // Duration scales: shorter in early phases, longer later
-  const baseDuration = S.phase <= 2 ? 6000 : S.phase <= 3 ? 10000 : 15000;
-  const stepTime = baseDuration / 100;
+  if(useModern){
+    bsod.className = 'modern';
+    document.getElementById('bsod-code').textContent = pick(bsodCodes);
+    let pct = 0;
+    const iv = setInterval(()=>{
+      pct += randInt(1,8);
+      if(S.phase>=3 && Math.random()<.1) pct = Math.max(0, pct-randInt(5,15));
+      pct = Math.min(pct, 100);
+      document.getElementById('bsod-pct').textContent = pct + '% complete';
+      if(pct >= 100){ clearInterval(iv); bsodReboot(); }
+    }, 300);
+  } else {
+    bsod.className = '';
+    document.getElementById('bsod-file').textContent = pick(bsodFiles);
+    document.getElementById('bsod-extra').textContent = 'Collecting error data... dumping to /dev/null...';
+    // Auto-reboot after a few seconds
+    setTimeout(bsodReboot, 4000);
+  }
 
-  const iv = setInterval(() => {
-    if(S.gameOver) { clearInterval(iv); overlay.style.display='none'; S.updateActive=false; return; }
-    // progress sometimes goes backwards in later phases
-    if(S.phase >= 3 && Math.random() < 0.15) {
-      pct = Math.max(0, pct - randInt(3, 12));
-    } else {
-      pct += randInt(1, 4);
+  const maxBsods = S.phase<=1?5:S.phase<=2?4:3;
+  if(S.bsodCount >= maxBsods){
+    setTimeout(triggerGameOver, 5000);
+  }
+}
+
+function bsodReboot(){
+  if(S.gameOver) return;
+  const bsod = document.getElementById('bsod');
+  bsod.style.display = 'none';
+  SFX.shutdown();
+
+  // Show boot sequence then restore desktop
+  showBootSequence(() => {
+    // Restore desktop state (keep tally, keep windows)
+    document.getElementById('desktop').style.display = 'block';
+    document.getElementById('taskbar').style.display = 'flex';
+    S.stability = Math.max(20, 75 - S.bsodCount * 15);
+    SFX.startup();
+    updateClock();
+    // Windows survive the reboot... or do they?
+    if(S.phase >= 2) {
+      // Close some random windows on reboot
+      const toClose = S.windows.slice(0, randInt(1, Math.min(3, S.windows.length)));
+      toClose.forEach(w => closeWin(w.id));
+      if(toClose.length > 0) setTimeout(()=>spawnError("Some programs didn't survive the reboot. RIP."), 1500);
     }
-    pct = Math.min(pct, 100);
-    pctEl.textContent = pct + '%';
-    if(Math.random() < 0.12) textEl.textContent = pick(updateMessages);
-    if(pct >= 100) {
+  }, true);
+}
+
+// ═══════════════ FORCED UPDATE WITH REBOOT ═══════════════
+const updateMsgs=["Working on updates...","Installing update 1 of 847...","Configuring features...","Downloading more RAM...","Reticulating splines...","Updating the update updater...","Installing unnecessary features...","Removing features you liked...","Please wait. No really, please."];
+
+function triggerForcedUpdate(){
+  if(S.gameOver||S.updateActive||S.booting)return;
+  S.updateActive=true;S.updatesEndured++;
+  const overlay=document.getElementById('forced-update');
+  const pctEl=document.getElementById('update-pct');
+  const textEl=document.getElementById('update-text');
+  overlay.style.display='flex';
+  let pct=0;
+  const dur=S.phase<=2?6000:S.phase<=3?10000:15000;
+  const iv=setInterval(()=>{
+    if(S.gameOver){clearInterval(iv);overlay.style.display='none';S.updateActive=false;return;}
+    if(S.phase>=3&&Math.random()<.15)pct=Math.max(0,pct-randInt(3,12));
+    else pct+=randInt(1,4);
+    pct=Math.min(pct,100);
+    pctEl.textContent=pct+'%';
+    if(Math.random()<.12)textEl.textContent=pick(updateMsgs);
+    if(pct>=100){
       clearInterval(iv);
-      textEl.textContent = "Update complete! Restarting...";
-      setTimeout(() => {
-        overlay.style.display = 'none';
-        S.updateActive = false;
-        // The update always makes things slightly worse
-        S.stability -= randInt(2, 8);
-        if(S.phase >= 3) {
-          spawnError("The update installed 3 new bugs and removed 0 old ones.");
-        }
-      }, 1500);
+      textEl.textContent="Restarting...";
+      S.stability-=randInt(2,8);
+      // Show reboot sequence
+      setTimeout(()=>{
+        overlay.style.display='none';
+        S.updateActive=false;
+        SFX.shutdown();
+        showBootSequence(()=>{
+          document.getElementById('desktop').style.display='block';
+          document.getElementById('taskbar').style.display='flex';
+          SFX.startup();
+          updateClock();
+          if(S.phase>=3)setTimeout(()=>spawnError("The update installed 3 new bugs and removed 0 old ones."),1500);
+        }, true);
+      }, 1200);
     }
-  }, stepTime);
+  }, dur/100);
 }
 
-// ═══════════════ POPUP AD SYSTEM ═══════════════
-const popupAds = [
-  { title: "🎉 CONGRATULATIONS!!!", body: `<div class="big">YOU ARE THE 1,000,000th VISITOR!</div><p>Click here to claim your FREE iPad!</p><button onclick="adClick(this)">CLAIM NOW!!!</button><p class="fine-print">*iPad may not exist</p>` },
-  { title: "⚠️ WARNING", body: `<div class="big">YOUR COMPUTER HAS 847 VIRUSES!</div><p class="blink-text">DOWNLOAD OUR TOTALLY LEGIT ANTIVIRUS NOW</p><button onclick="adClick(this)">PROTECT ME</button><p class="fine-print">*We are the virus</p>` },
-  { title: "💰 WORK FROM HOME", body: `<p>This mom makes $47,000/day clicking buttons on her computer!</p><div class="big">DOCTORS HATE HER</div><button onclick="adClick(this)">LEARN HER SECRET</button><p class="fine-print">*Secret: she doesn't</p>` },
-  { title: "🔥 HOT SINGLES", body: `<div class="big">HOT SINGLES IN YOUR AREA</div><p>Your area: a computer that keeps crashing</p><button onclick="adClick(this)">MEET THEM</button><p class="fine-print">*The singles are error dialogs</p>` },
-  { title: "💊 ONE WEIRD TRICK", body: `<p>Use this ONE WEIRD TRICK to fix all your computer errors!</p><div class="big">CLICK HERE</div><button onclick="adClick(this)">FIX EVERYTHING</button><p class="fine-print">*Trick: throw computer in ocean</p>` },
-  { title: "🎰 FREE MONEY", body: `<div class="big">YOU WON $1,000,000!!!</div><p>Just enter your credit card to verify identity!</p><button onclick="adClick(this)">GET RICH</button><p class="fine-print">*You will not get rich</p>` },
-  { title: "🧠 IQ TEST", body: `<p>People with HIGH IQ can't resist clicking this button:</p><div class="big">⬇️⬇️⬇️</div><button onclick="adClick(this)">I'M SMART</button><p class="fine-print">*You clicked it. You're not.</p>` },
-  { title: "📦 FREE DOWNLOAD", body: `<div class="big">DOWNLOAD MORE RAM</div><p>Your computer is slow because it needs more RAM!</p><button onclick="adClick(this)">DOWNLOAD 64GB FREE</button><p class="fine-print">*This downloads nothing</p>` },
+// ═══════════════ POPUP ADS ═══════════════
+const popupAds=[
+  {t:"🎉 CONGRATULATIONS!!!",b:'<div class="big">YOU ARE THE 1,000,000th VISITOR!</div><p>Click to claim your FREE iPad!</p><button onclick="adClick(this)">CLAIM NOW!!!</button><p class="fine-print">*iPad may not exist</p>'},
+  {t:"⚠️ WARNING",b:'<div class="big">YOUR COMPUTER HAS 847 VIRUSES!</div><p class="blink-text">DOWNLOAD OUR ANTIVIRUS NOW</p><button onclick="adClick(this)">PROTECT ME</button><p class="fine-print">*We are the virus</p>'},
+  {t:"💰 WORK FROM HOME",b:'<p>This mom makes $47,000/day clicking buttons!</p><div class="big">DOCTORS HATE HER</div><button onclick="adClick(this)">LEARN SECRET</button><p class="fine-print">*Secret: she doesn\'t</p>'},
+  {t:"🔥 HOT SINGLES",b:'<div class="big">HOT SINGLES IN YOUR AREA</div><p>Your area: a crashing computer</p><button onclick="adClick(this)">MEET THEM</button><p class="fine-print">*The singles are error dialogs</p>'},
+  {t:"💊 ONE WEIRD TRICK",b:'<p>Fix ALL your computer errors!</p><div class="big">CLICK HERE</div><button onclick="adClick(this)">FIX EVERYTHING</button><p class="fine-print">*Trick: throw computer in ocean</p>'},
+  {t:"📦 FREE RAM",b:'<div class="big">DOWNLOAD MORE RAM</div><p>Your PC is slow because it needs more!</p><button onclick="adClick(this)">DOWNLOAD 64GB FREE</button><p class="fine-print">*Downloads nothing</p>'},
+  {t:"🧠 IQ TEST",b:'<p>High IQ people can\'t resist clicking:</p><div class="big">⬇️⬇️⬇️</div><button onclick="adClick(this)">I\'M SMART</button><p class="fine-print">*You clicked it. You\'re not.</p>'},
 ];
-
-function spawnPopupAd() {
-  if(S.gameOver || S.updateActive) return;
-  const ad = pick(popupAds);
-  const d = document.getElementById('desktop');
-  const el = document.createElement('div');
-  el.className = 'popup-ad';
-  el.style.left = randInt(20, Math.max(50, window.innerWidth - 300)) + 'px';
-  el.style.top = randInt(20, Math.max(50, window.innerHeight - 250)) + 'px';
-  el.style.zIndex = ++S.zCounter;
-  el.innerHTML = `
-    <div class="popup-ad-header">
-      <span>${ad.title}</span>
-      <span class="popup-ad-close" onclick="closePopup(this)">✕</span>
-    </div>
-    <div class="popup-ad-body">${ad.body}</div>`;
+function spawnPopupAd(){
+  if(S.gameOver||S.updateActive||S.booting)return;
+  SFX.notify();
+  const ad=pick(popupAds),d=document.getElementById('desktop'),el=document.createElement('div');
+  el.className='popup-ad';
+  el.style.cssText=`left:${randInt(20,Math.max(50,innerWidth-300))}px;top:${randInt(20,Math.max(50,innerHeight-250))}px;z-index:${++S.zCounter}`;
+  el.innerHTML=`<div class="popup-ad-header"><span>${ad.t}</span><span class="popup-ad-close" onclick="closePopup(this)">✕</span></div><div class="popup-ad-body">${ad.b}</div>`;
   d.appendChild(el);
-  // Make draggable
-  let dr=false,ox,oy;
-  const hdr = el.querySelector('.popup-ad-header');
-  hdr.addEventListener('mousedown',e=>{
-    if(e.target.classList.contains('popup-ad-close'))return;
-    dr=true;ox=e.clientX-el.offsetLeft;oy=e.clientY-el.offsetTop;el.style.zIndex=++S.zCounter;
-  });
+  let dr=false,ox,oy;const hdr=el.querySelector('.popup-ad-header');
+  hdr.addEventListener('mousedown',e=>{if(e.target.classList.contains('popup-ad-close'))return;dr=true;ox=e.clientX-el.offsetLeft;oy=e.clientY-el.offsetTop;el.style.zIndex=++S.zCounter;});
   document.addEventListener('mousemove',e=>{if(!dr)return;el.style.left=(e.clientX-ox)+'px';el.style.top=(e.clientY-oy)+'px';});
   document.addEventListener('mouseup',()=>{dr=false;});
 }
-
-function closePopup(closeBtn) {
-  const popup = closeBtn.closest('.popup-ad');
-  S.popupsClosed++;
-  // In later phases closing spawns more
-  if(S.phase >= 3 && Math.random() < 0.6) {
-    popup.remove();
-    setTimeout(()=>spawnPopupAd(), 200);
-    setTimeout(()=>spawnPopupAd(), 500);
-  } else if(S.phase >= 2 && Math.random() < 0.4) {
-    popup.remove();
-    setTimeout(()=>spawnPopupAd(), 400);
-  } else {
-    popup.remove();
-  }
+function closePopup(btn){const p=btn.closest('.popup-ad');S.popupsClosed++;
+  if(S.phase>=3&&Math.random()<.6){p.remove();setTimeout(spawnPopupAd,200);setTimeout(spawnPopupAd,500);}
+  else if(S.phase>=2&&Math.random()<.4){p.remove();setTimeout(spawnPopupAd,400);}
+  else p.remove();
 }
+function adClick(btn){btn.closest('.popup-ad').remove();spawnError("Congratulations! You won: absolutely nothing.");if(S.phase>=2)setTimeout(spawnPopupAd,1000);}
 
-function adClick(btn) {
-  const popup = btn.closest('.popup-ad');
-  popup.remove();
-  spawnError("Congratulations! You've won: absolutely nothing. Also here's an error.");
-  if(S.phase >= 2) setTimeout(()=>spawnPopupAd(), 1000);
-}
-
-// ═══════════════ CURSOR CHAOS SYSTEM ═══════════════
-const cursorEffects = {
-  normal: () => {
-    document.body.className = document.body.className.replace(/cursor-\w+/g,'');
-    document.getElementById('fake-cursor').style.display='none';
-    clearTrail();
-  },
-  wait: () => {
-    document.body.className = document.body.className.replace(/cursor-\w+/g,'') + ' cursor-wait';
-  },
-  hidden: () => {
-    document.body.className = document.body.className.replace(/cursor-\w+/g,'') + ' cursor-none';
-    const fc = document.getElementById('fake-cursor');
-    fc.style.display='block';
-    fc.textContent = pick(['🖱️','👆','🫵','🤚','✋','👀','❓']);
-  },
-  crosshair: () => {
-    document.body.className = document.body.className.replace(/cursor-\w+/g,'') + ' cursor-crosshair';
-  },
-  trail: () => {
-    document.body.className = document.body.className.replace(/cursor-\w+/g,'');
-    S.cursorMode = 'trail';
-  },
-  inverted: () => {
-    document.body.className = document.body.className.replace(/cursor-\w+/g,'');
-    // offset fake cursor shows opposite side of screen
-    const fc = document.getElementById('fake-cursor');
-    fc.style.display='block';
-    fc.textContent='🔄';
-    S.cursorMode = 'inverted';
-  },
-  giant: () => {
-    document.body.className = document.body.className.replace(/cursor-\w+/g,'') + ' cursor-none';
-    const fc = document.getElementById('fake-cursor');
-    fc.style.display='block';
-    fc.style.fontSize='80px';
-    fc.textContent='🖱️';
-    S.cursorMode = 'giant';
-  },
+// ═══════════════ CURSOR CHAOS ═══════════════
+const cursorFx={
+  normal(){document.body.className=document.body.className.replace(/cursor-\w+/g,'');document.getElementById('fake-cursor').style.display='none';S.trailDots.forEach(d=>d.remove());S.trailDots=[];},
+  wait(){document.body.className=document.body.className.replace(/cursor-\w+/g,'')+' cursor-wait';},
+  hidden(){document.body.className=document.body.className.replace(/cursor-\w+/g,'')+' cursor-none';const f=document.getElementById('fake-cursor');f.style.display='block';f.textContent=pick(['🖱️','👆','🫵','👀','❓']);f.style.fontSize='24px';},
+  crosshair(){document.body.className=document.body.className.replace(/cursor-\w+/g,'')+' cursor-crosshair';},
+  trail(){document.body.className=document.body.className.replace(/cursor-\w+/g,'');S.cursorMode='trail';},
+  giant(){document.body.className=document.body.className.replace(/cursor-\w+/g,'')+' cursor-none';const f=document.getElementById('fake-cursor');f.style.display='block';f.style.fontSize='80px';f.textContent='🖱️';S.cursorMode='giant';},
 };
-
-function triggerCursorChaos() {
-  if(S.gameOver) return;
-  const effects = S.phase <= 2
-    ? ['wait','crosshair']
-    : ['wait','hidden','crosshair','trail','inverted','giant'];
-  const fx = pick(effects);
-  (cursorEffects[fx] || cursorEffects.normal)();
-  S.cursorMode = fx;
-  S.cursorChaosActive = true;
-  // Duration: short in early phases, long later
-  const dur = S.phase <= 2 ? randInt(3000,6000) : randInt(5000,15000);
-  setTimeout(() => {
-    if(S.cursorMode === fx) { // only reset if no new effect took over
-      cursorEffects.normal();
-      S.cursorChaosActive = false;
-      S.cursorMode = 'normal';
-      document.getElementById('fake-cursor').style.fontSize='24px';
-    }
-  }, dur);
+function triggerCursorChaos(){
+  if(S.gameOver)return;
+  const fx=pick(S.phase<=2?['wait','crosshair']:['wait','hidden','crosshair','trail','giant']);
+  (cursorFx[fx]||cursorFx.normal)();S.cursorMode=fx;S.cursorChaosActive=true;
+  const dur=S.phase<=2?randInt(3000,6000):randInt(5000,15000);
+  setTimeout(()=>{if(S.cursorMode===fx){cursorFx.normal();S.cursorChaosActive=false;S.cursorMode='normal';}},dur);
 }
-
-// Trail dots
-function addTrailDot(x,y){
-  if(S.cursorMode !== 'trail') return;
-  const dot = document.createElement('div');
-  dot.className='trail-dot';
-  dot.style.left=x+'px';dot.style.top=y+'px';
-  document.body.appendChild(dot);
-  S.trailDots.push(dot);
-  setTimeout(()=>{dot.style.opacity='0';},100);
-  setTimeout(()=>{dot.remove();S.trailDots=S.trailDots.filter(d=>d!==dot);},600);
-}
-function clearTrail(){S.trailDots.forEach(d=>d.remove());S.trailDots=[];}
-
-// Mouse tracking for cursor effects
-document.addEventListener('mousemove', e => {
-  const fc = document.getElementById('fake-cursor');
-  if(S.cursorMode === 'hidden' || S.cursorMode === 'giant') {
-    fc.style.left = (e.clientX + 5) + 'px';
-    fc.style.top = (e.clientY + 5) + 'px';
-  } else if(S.cursorMode === 'inverted') {
-    fc.style.left = (window.innerWidth - e.clientX) + 'px';
-    fc.style.top = (window.innerHeight - e.clientY) + 'px';
-  } else if(S.cursorMode === 'trail') {
-    addTrailDot(e.clientX, e.clientY);
-  }
+document.addEventListener('mousemove',e=>{
+  const f=document.getElementById('fake-cursor');
+  if(S.cursorMode==='hidden'||S.cursorMode==='giant'){f.style.left=(e.clientX+5)+'px';f.style.top=(e.clientY+5)+'px';}
+  if(S.cursorMode==='trail'){const d=document.createElement('div');d.className='trail-dot';d.style.left=e.clientX+'px';d.style.top=e.clientY+'px';document.body.appendChild(d);S.trailDots.push(d);setTimeout(()=>{d.style.opacity='0';},100);setTimeout(()=>{d.remove();S.trailDots=S.trailDots.filter(x=>x!==d);},600);}
 });
 
-// ═══════════════ BSOD & GAME OVER ═══════════════
-function triggerBSOD(){
-  S.bsodCount++;
-  const bsod=document.getElementById('bsod');
-  const extras=[
-    "Collecting error data... done\nDumping physical memory to /dev/null...",
-    "Beginning dump of your hopes and dreams...\n[|||||||||||] 100% complete",
-    "System uptime: not long enough\nNumber of errors: yes",
-  ];
-  document.getElementById('bsod-extra').textContent=pick(extras);
-  bsod.style.display='block';
-  playBSODSound();
-  // End threshold scales with phase
-  const maxBsods = S.phase <= 1 ? 5 : S.phase <= 2 ? 4 : 3;
-  if(S.bsodCount >= maxBsods){
-    setTimeout(()=>triggerGameOver(),3000);return;
-  }
-  const handler=()=>{
-    bsod.style.display='none';
-    S.stability=Math.max(20, 80 - S.bsodCount*15);
-    bsod.removeEventListener('click',handler);
-    document.removeEventListener('keydown',handler);
-  };
-  bsod.addEventListener('click',handler);
-  document.addEventListener('keydown',handler,{once:true});
+// ═══════════════ CLIPPY ═══════════════
+function showClippy(){
+  if(S.gameOver||S.booting)return;
+  const t=document.getElementById('clippy-text');
+  const p=clippyPhase[Math.min(S.phase,clippyPhase.length-1)];
+  t.textContent=Math.random()<.5?pick(p):pick(clippyMessages);
+  document.getElementById('clippy').style.display='block';
+  clearTimeout(S.clippyTimeout);
+  S.clippyTimeout=setTimeout(()=>document.getElementById('clippy').style.display='none',5000);
 }
+document.getElementById('clippy').addEventListener('click',()=>{
+  if(shouldError())spawnError("Clippy has encountered an error.");
+  else document.getElementById('clippy-text').textContent=pick(clippyMessages);
+});
 
+// ═══════════════ GAME OVER ═══════════════
 function triggerGameOver(){
-  S.gameOver=true;
-  cursorEffects.normal();
-  document.body.style.filter='';
-  document.getElementById('bsod').style.display='none';
-  document.getElementById('forced-update').style.display='none';
+  S.gameOver=true;cursorFx.normal();document.body.style.filter='';
+  ['bsod','forced-update','boot-screen'].forEach(id=>document.getElementById(id).style.display='none');
   const t=Math.floor(elapsed());
   document.getElementById('go-time').textContent=t;
   document.getElementById('go-errors').textContent=S.errorCount;
   document.getElementById('go-bsods').textContent=S.bsodCount;
   document.getElementById('go-popups').textContent=S.popupsClosed;
   document.getElementById('go-updates').textContent=S.updatesEndured;
-  const ratings=['F---','F--','F-','F','F+','D-','D','D+','C-','C','C+','B-'];
-  document.getElementById('go-rating').textContent=ratings[Math.min(ratings.length-1,Math.floor(t/20))];
+  const r=['F---','F--','F-','F','F+','D-','D','D+','C-','C','C+','B-','B'];
+  document.getElementById('go-rating').textContent=r[Math.min(r.length-1,Math.floor(t/20))];
   document.getElementById('gameover').style.display='flex';
+  SFX.shutdown();
 }
 
-// ═══════════════ CLIPPY ═══════════════
-function showClippy(){
-  if(S.gameOver)return;
-  const clippy=document.getElementById('clippy');
-  const text=document.getElementById('clippy-text');
-  const phasemsgs = clippyPhaseMessages[Math.min(S.phase, clippyPhaseMessages.length-1)];
-  text.textContent = Math.random()<0.5 ? pick(phasemsgs) : pick(clippyMessages);
-  clippy.style.display='block';
-  clearTimeout(S.clippyTimeout);
-  S.clippyTimeout=setTimeout(()=>{clippy.style.display='none';},5000);
-}
-document.getElementById('clippy').addEventListener('click',()=>{
-  if(shouldError()) spawnError("Clippy has encountered an error. Even Clippy isn't safe.");
-  else document.getElementById('clippy-text').textContent=pick(clippyMessages);
-});
-
-// ═══════════════ HELP CONTENT ═══════════════
-const helpContent = `<div class="help-content">
-  <h3>❓ Windoze 95++ Help Center</h3>
-  <p>Welcome to the help center! Here you will find absolutely no help whatsoever.</p>
-  <h3>Q: My computer keeps showing errors</h3>
-  <p>A: That's a feature, not a bug. You're welcome.</p>
-  <h3>Q: How do I stop the errors?</h3>
-  <p>A: You don't. They stop when they feel like it.</p>
-  <h3>Q: The blue screen keeps appearing</h3>
-  <p>A: Blue is a calming color. Consider it free meditation.</p>
-  <h3>Q: Can I uninstall Windoze 95++?</h3>
-  <p>A: Windoze 95++ is a state of mind. You cannot uninstall a state of mind.</p>
-  <h3>Q: Who do I contact for support?</h3>
-  <p>A: Yell loudly at your screen. They won't help, but they'll hear you.</p>
-  <h3>Q: Popups keep appearing everywhere</h3>
-  <p>A: You ARE the 1,000,000th visitor though. That part is real. (It's not.)</p>
-  <h3>Q: My cursor is doing weird things</h3>
-  <p>A: Your cursor is expressing itself. Don't stifle its creativity.</p>
-  <h3>Q: A forced update took over my screen</h3>
-  <p>A: The update installed 3 new bugs and removed 0 old ones. Standard procedure.</p>
-  <h3>Q: How do I exit this help page?</h3>
-  <p>A: Click the X button. Warning: this has a chance of causing an error.</p>
-  <h3>Helpful Tips:</h3>
-  <p>1. Don't</p>
-  <p>2. Seriously, just don't</p>
-  <p>3. Figure it out yourself 😊</p>
-</div>`;
-
-// ═══════════════ APP WINDOWS ═══════════════
-const desktopIcons = [
+// ═══════════════ DESKTOP ICONS ═══════════════
+const desktopIcons=[
   {icon:'💻',label:'My Computer',action:'mycomputer',x:20,y:20},
   {icon:'🗑️',label:'Recycle Bin',action:'recyclebin',x:20,y:110},
   {icon:'📝',label:'Notepad',action:'notepad',x:20,y:200},
   {icon:'🎨',label:'Paint',action:'paint',x:20,y:290},
-  {icon:'🌐',label:'Internet',action:'internet',x:20,y:380},
-  {icon:'🧮',label:'Calculator',action:'calculator',x:110,y:20},
+  {icon:'🧮',label:'Calculator',action:'calculator',x:20,y:380},
+  {icon:'🌐',label:'Internet Explorer',action:'internet',x:110,y:20},
   {icon:'📁',label:'My Documents',action:'documents',x:110,y:110},
   {icon:'❓',label:'Help',action:'help',x:110,y:200},
   {icon:'🐏',label:'Download RAM',action:'downloadram',x:110,y:290},
+  // Joke apps
+  {icon:'🔴',label:'Adobie Reader',action:'adobe',x:200,y:20},
+  {icon:'🌊',label:'Edgé Browser',action:'edge',x:200,y:110},
+  {icon:'🛡️',label:'Norton 360',action:'norton',x:200,y:200},
+  {icon:'🔓',label:'McAfee',action:'mcafee',x:200,y:290},
+  {icon:'📦',label:'WinRAR',action:'winrar',x:200,y:380},
+  {icon:'🎵',label:'iTunez',action:'itunes',x:290,y:20},
 ];
 
-
-// ═══════════════ DOWNLOAD MORE RAM ═══════════════
-function openDownloadRAM() {
-  const w = createWindow('Download More RAM™', '🐏', `
-    <div class="ram-window">
-      <div class="ram-header">
-        <h2>🐏 DownloadMoreRAM Pro™</h2>
-        <p>The #1 trusted RAM downloader since 1847</p>
-      </div>
-      <div class="ram-stats">
-        <div class="ram-stat"><div class="val" id="ram-current">4 GB</div><div class="lbl">Current RAM</div></div>
-        <div class="ram-stat"><div class="val" id="ram-target">4 GB</div><div class="lbl">After Download</div></div>
-        <div class="ram-stat"><div class="val" id="ram-speed">0 MB/s</div><div class="lbl">Download Speed</div></div>
-        <div class="ram-stat"><div class="val" id="ram-status">READY</div><div class="lbl">Status</div></div>
-      </div>
-      <div class="ram-progress">
-        <div class="ram-bar-outer"><div class="ram-bar-inner" id="ram-bar"></div><div class="ram-bar-text" id="ram-bar-text">0%</div></div>
-      </div>
-      <div class="ram-log" id="ram-log">C:\\RAM> Initializing RAM Downloader v4.20...\nC:\\RAM> Ready to download. Click START to begin.</div>
-      <div class="ram-btns">
-        <button class="error-btn" id="ram-start-btn" onclick="startRAMDownload()" style="background:#2ecc71;color:white;font-weight:700;">▶ START DOWNLOAD</button>
-        <button class="error-btn" onclick="spawnError('Premium costs $9,999.99/month. Per gigabyte.')">⭐ GO PREMIUM</button>
-        <button class="error-btn" onclick="spawnError('Customer support has been downloaded into RAM and no longer exists.')">📞 Support</button>
-      </div>
-    </div>`, 380, 420);
-  return w;
-}
-
-function startRAMDownload() {
-  const bar = document.getElementById('ram-bar');
-  const barText = document.getElementById('ram-bar-text');
-  const log = document.getElementById('ram-log');
-  const speed = document.getElementById('ram-speed');
-  const target = document.getElementById('ram-target');
-  const status = document.getElementById('ram-status');
-  const startBtn = document.getElementById('ram-start-btn');
-  if(!bar || !log) return;
-
-  startBtn.disabled = true;
-  startBtn.textContent = '⏳ DOWNLOADING...';
-  status.textContent = 'ACTIVE';
-  status.style.color = '#2ecc71';
-
-  const logMsgs = [
-    'Connecting to RAM cloud servers...',
-    'Bypassing firewall (don\'t worry about it)...',
-    'Allocating virtual memory sectors...',
-    'Downloading RAM_chunk_001.dll...',
-    'Compressing 1s and 0s for faster download...',
-    'Asking nicely for more memory...',
-    'Converting hard drive space into RAM (this is fine)...',
-    'Overclocking the download...',
-    'RAM molecules assembling...',
-    'Defragmenting new RAM into old RAM...',
-    'Teaching RAM to remember things...',
-    'WARNING: RAM is sentient. Proceeding anyway...',
-    'Downloading complementary viruses with your RAM...',
-    'RAM is 87% compatible with your system (close enough)...',
-    'Patching RAM_patch_for_ram_patch.exe...',
-    'Almost there! (narrator: it was not almost there)...',
-    'Reallocating funds from your bank account...',
-    'ERROR: Too much RAM. Downloading more to compensate...',
-    'SUCCESS: Downloaded 1 byte of RAM! Only 16,777,215 to go...',
-    'Your antivirus is looking the other way...',
-  ];
-
-  let pct = 0;
-  let ramGB = 4;
-  let logIdx = 0;
-
-  const addLog = (msg) => {
-    log.textContent += '\nC:\\RAM> ' + msg;
-    log.scrollTop = log.scrollHeight;
-  };
-
-  const iv = setInterval(() => {
-    if(S.gameOver) { clearInterval(iv); return; }
-
-    // Progress (sometimes goes backwards)
-    if(S.phase >= 3 && Math.random() < 0.2) {
-      pct = Math.max(0, pct - randInt(3, 15));
-      addLog('ERROR: RAM leaked. Re-downloading...');
-    } else {
-      pct += randInt(1, 5);
-    }
-
-    // Speed display (completely fake)
-    const spd = randInt(1, 99999);
-    const units = pick(['B/s', 'KB/s', 'MB/s', 'GB/s', 'TB/s', 'thoughts/s', 'vibes/s']);
-    speed.textContent = spd + ' ' + units;
-
-    // RAM counter goes up in absurd ways
-    if(pct > 20) ramGB = randInt(4, 32);
-    if(pct > 50) ramGB = randInt(32, 256);
-    if(pct > 80) ramGB = randInt(256, 99999);
-    target.textContent = ramGB + ' GB';
-
-    // Random log messages
-    if(Math.random() < 0.3) {
-      addLog(logMsgs[logIdx % logMsgs.length]);
-      logIdx++;
-    }
-
-    // Random errors during download
-    if(Math.random() < (S.phase <= 1 ? 0.05 : 0.15)) {
-      spawnError('RAM download encountered: ' + pick([
-        'a firewall made of actual fire',
-        'an existential crisis',
-        'a buffer overflow (the buffer is crying)',
-        'a memory leak (it\'s a real leak, get a bucket)',
-        'incompatible RAM vibes',
-        'a licensing error for free software',
-      ]));
-    }
-
-    bar.style.width = Math.min(pct, 100) + '%';
-    barText.textContent = Math.min(pct, 100) + '%';
-
-    if(pct >= 100) {
-      clearInterval(iv);
-      speed.textContent = '0 B/s';
-      status.textContent = 'DONE?';
-      status.style.color = '#e74c3c';
-      const fakeRAM = randInt(1, 999) + ',' + randInt(100,999);
-      target.textContent = fakeRAM + ' GB';
-      addLog('=============================');
-      addLog('DOWNLOAD COMPLETE!');
-      addLog('Successfully downloaded ' + fakeRAM + ' GB of RAM!');
-      addLog('(None of it is real)');
-      addLog('Your computer now has LESS memory than before!');
-      addLog('Thank you for using DownloadMoreRAM Pro™!');
-
-      startBtn.textContent = '✅ COMPLETE';
-      startBtn.style.background = '#e74c3c';
-
-      // The download actually hurts stability
-      S.stability -= randInt(5, 15);
-      setTimeout(() => {
-        spawnError('DownloadMoreRAM Pro™ has consumed all your actual RAM. Congratulations!');
-      }, 1500);
-    }
-  }, 400);
-}
-
-function openApp(action){
-  if(S.gameOver)return;
+// ═══════════════ ALL APPS ═══════════════
+function openApp(a){
+  if(S.gameOver||S.booting)return;
   if(shouldError()){spawnError();return;}
-  const apps={mycomputer:openMyComputer,recyclebin:openRecycleBin,notepad:openNotepad,downloadram:openDownloadRAM,
-    paint:openPaint,internet:openInternet,calculator:openCalculator,documents:openDocuments,
-    help:openHelp,settings:openSettings,find:openFind,programs:openPrograms,shutdown:openShutdown};
-  (apps[action]||function(){spawnError(`Unknown program: ${action}.exe has stopped working.`);})();
+  const apps={mycomputer:openMyComputer,recyclebin:openRecycleBin,notepad:openNotepad,paint:openPaint,calculator:openCalculator,internet:openInternet,documents:openDocuments,help:openHelp,settings:openSettings,find:openFind,programs:openPrograms,shutdown:openShutdown,downloadram:openDownloadRAM,adobe:openAdobe,edge:openEdge,norton:openNorton,mcafee:openMcAfee,winrar:openWinRAR,itunes:openiTunes};
+  (apps[a]||function(){spawnError(a+'.exe has stopped working.');})();
 }
 
 function openMyComputer(){
-  createWindow('My Computer','💻',`<div class="file-grid">
-    <div class="file-item" onclick="if(Math.random()<0.5)spawnError('Drive C: has feelings and doesn\'t want to be opened.');else spawnError('Access denied. This is MY computer, not yours.')"><div class="file-icon">💾</div>C: Drive</div>
-    <div class="file-item" onclick="spawnError('Drive D: doesn\'t exist. It never did.')"><div class="file-icon">💿</div>D: Drive</div>
-    <div class="file-item" onclick="spawnError('The floppy drive is a portal to 1995.')"><div class="file-icon">💽</div>A: Floppy</div>
-    <div class="file-item" onclick="spawnError('Network drive is on a coffee break.')"><div class="file-icon">🌐</div>Z: Network</div>
-  </div>`,350,250);
+  createWindow('My Computer','💻','<div class="file-grid"><div class="file-item" onclick="spawnError(\'Drive C: has feelings and refuses to open.\')"><div class="file-icon">💾</div>C: Drive</div><div class="file-item" onclick="spawnError(\'Drive D: does not exist. It never did.\')"><div class="file-icon">💿</div>D: Drive</div><div class="file-item" onclick="spawnError(\'The floppy drive is a portal to 1995.\')"><div class="file-icon">💽</div>A: Floppy</div><div class="file-item" onclick="spawnError(\'Network drive is on a coffee break.\')"><div class="file-icon">🌐</div>Z: Network</div></div>',350,250);
 }
 
 function openRecycleBin(){
-  createWindow('Recycle Bin','🗑️',`<div class="recycle-msg">
-    <p style="font-size:40px;margin-bottom:12px">🗑️</p>
-    <p><b>Recycle Bin contains:</b></p>
-    <p>• Your productivity (3.2 GB)</p><p>• Time you'll never get back (∞ GB)</p>
-    <p>• hope.exe (0 bytes)</p><p>• system_stability.dll (corrupted)</p><br>
-    <button class="error-btn" onclick="spawnError('Cannot empty Recycle Bin. It empties you.')">Empty Recycle Bin</button>
-    <button class="error-btn" onclick="spawnError('You cannot restore what was never there.')">Restore All</button>
-  </div>`,320,300);
+  createWindow('Recycle Bin','🗑️','<div class="recycle-msg"><p style="font-size:40px;margin-bottom:12px">🗑️</p><p><b>Contains:</b></p><p>• Your productivity (3.2 GB)</p><p>• Time you\'ll never get back (∞ GB)</p><p>• hope.exe (0 bytes)</p><p>• system_stability.dll (corrupted)</p><br><button class="error-btn" onclick="spawnError(\'Cannot empty. It empties you.\')">Empty</button> <button class="error-btn" onclick="spawnError(\'You cannot restore what was never there.\')">Restore</button></div>',300,280);
 }
 
 function openNotepad(){
-  const ph=["Dear Diary, the computer hates me again...","TODO:\\n1. Fix computer\\n2. Give up",
-    "HELP ME I AM TRAPPED IN A WINDOZE SIMULATOR","If you're reading this, it's too late."];
-  const w=createWindow('Notepad','📝',
-    `<textarea class="notepad-content" placeholder="${pick(ph)}" spellcheck="false"></textarea>`,400,300);
-  if(w){
-    const ta=w.el.querySelector('textarea');
-    ta.addEventListener('keydown',()=>{if(Math.random()<(S.phase<=1?0.03:0.08))spawnError("Notepad disagrees with that keystroke.");});
-    setInterval(()=>{
-      if(ta.value.length>20&&Math.random()<(S.phase<=1?0.05:0.15)&&!S.gameOver){
-        const p=randInt(0,ta.value.length-1);
-        const c='█▓░▒╔╗╚╝║═☺☻♥♦♣♠';
-        ta.value=ta.value.substring(0,p)+c[randInt(0,c.length-1)]+ta.value.substring(p+1);
-      }
-    },S.phase<=1?8000:3000);
+  const ph=pick(["Dear Diary, the computer hates me...","TODO:\\n1. Fix computer\\n2. Give up","HELP I AM TRAPPED IN A SIMULATOR","If you are reading this it is too late"]);
+  const w=createWindow('Notepad','📝','<textarea class="notepad-content" placeholder="'+ph+'" spellcheck="false"></textarea>',400,300);
+  if(w){const ta=w.el.querySelector('textarea');
+    ta.addEventListener('keydown',()=>{if(Math.random()<(S.phase<=1?.03:.08)){SFX.error();spawnError("Notepad disagrees with that keystroke.");}});
+    const ci=setInterval(()=>{if(!document.contains(w.el)){clearInterval(ci);return;}if(ta.value.length>20&&Math.random()<(S.phase<=1?.05:.15)&&!S.gameOver){const p=randInt(0,ta.value.length-1);const c='█▓░▒╔╗╚╝║═☺☻♥♦♣♠';ta.value=ta.value.substring(0,p)+c[randInt(0,c.length-1)]+ta.value.substring(p+1);}},S.phase<=1?8000:3000);
   }
 }
 
 function openPaint(){
-  const w=createWindow('Paint','🎨',`<canvas class="paint-canvas" width="380" height="250"></canvas>`,420,310);
-  if(w){
-    const cv=w.el.querySelector('canvas'),ctx=cv.getContext('2d');
-    ctx.fillStyle='white';ctx.fillRect(0,0,380,250);
-    ctx.strokeStyle='#000';ctx.lineWidth=2;ctx.lineCap='round';
-    let dr=false;
-    cv.addEventListener('mousedown',e=>{
-      if(shouldError()){spawnError("The paint brush has dried up digitally.");return;}
-      dr=true;ctx.beginPath();ctx.moveTo(e.offsetX,e.offsetY);
-    });
-    cv.addEventListener('mousemove',e=>{
-      if(!dr)return;
-      if(Math.random()<(S.phase<=1?0.01:0.05))ctx.strokeStyle=`hsl(${randInt(0,360)},100%,50%)`;
-      ctx.lineTo(e.offsetX,e.offsetY);ctx.stroke();
-    });
-    cv.addEventListener('mouseup',()=>{dr=false;});
-    cv.addEventListener('mouseleave',()=>{dr=false;});
-    setInterval(()=>{
-      if(Math.random()<(S.phase<=1?0.03:0.12)&&!S.gameOver){
-        ctx.fillStyle=`hsl(${randInt(0,360)},100%,50%)`;
-        ctx.fillRect(randInt(0,360),randInt(0,230),randInt(5,30),randInt(5,30));
-      }
-    },S.phase<=1?8000:3000);
-  }
-}
-
-function openInternet(){
-  const w=createWindow('Internet Explorer','🌐',`<div style="padding:12px;text-align:center;">
-    <div style="background:#eee;border:2px inset #999;padding:4px 8px;margin-bottom:12px;text-align:left;font-size:12px;">🌐 http://www.definitely-real-internet.com</div>
-    <div class="loading-bar-container"><div class="loading-bar" id="inet-bar"></div></div>
-    <div class="loading-text" id="inet-status">Connecting to the internet...</div>
-    <div id="inet-content" style="margin-top:16px;display:none;">
-      <p style="font-size:16px;font-weight:bold;margin-bottom:8px;">🌐 The Internet</p>
-      <p style="font-size:13px;color:#555;">Welcome to the World Wide Web!</p>
-      <p style="font-size:12px;color:#888;margin-top:8px;">Page loaded in: ${randInt(45000,99000)}ms</p><br>
-      <button class="error-btn" onclick="spawnError('Your internet connection was last seen heading north.')">🔍 Search</button>
-      <button class="error-btn" onclick="spawnError('Your emails have been forwarded to the void.')">📧 Email</button>
-      <button class="error-btn" onclick="spawnError('The file downloaded itself to a parallel universe.')">⬇️ Download</button>
-    </div></div>`,420,320);
-  if(w){
-    let p=0;const bar=w.el.querySelector('#inet-bar'),st=w.el.querySelector('#inet-status');
-    const msgs=['Looking up DNS...','Negotiating with server...','Downloading the internet...','Buffering your patience...','Bribing the router...'];
-    const iv=setInterval(()=>{
-      if(S.gameOver){clearInterval(iv);return;}
-      p+=randInt(3,15);
-      if(S.phase>=2&&Math.random()<0.15)p=Math.max(0,p-randInt(5,20));
-      bar.style.width=Math.min(p,100)+'%';st.textContent=pick(msgs);
-      if(p>=100){clearInterval(iv);st.textContent='Page loaded! (A miracle)';w.el.querySelector('#inet-content').style.display='block';}
-    },500);
+  const w=createWindow('Paint','🎨','<canvas class="paint-canvas" width="380" height="250"></canvas>',420,310);
+  if(w){const cv=w.el.querySelector('canvas'),ctx=cv.getContext('2d');ctx.fillStyle='#fff';ctx.fillRect(0,0,380,250);ctx.strokeStyle='#000';ctx.lineWidth=2;ctx.lineCap='round';let dr=false;
+    cv.addEventListener('mousedown',e=>{if(shouldError()){spawnError("Paint brush has dried up digitally.");return;}dr=true;ctx.beginPath();ctx.moveTo(e.offsetX,e.offsetY);});
+    cv.addEventListener('mousemove',e=>{if(!dr)return;if(Math.random()<.05)ctx.strokeStyle=`hsl(${randInt(0,360)},100%,50%)`;ctx.lineTo(e.offsetX,e.offsetY);ctx.stroke();});
+    cv.addEventListener('mouseup',()=>{dr=false;});cv.addEventListener('mouseleave',()=>{dr=false;});
+    const gi=setInterval(()=>{if(!document.contains(w.el)){clearInterval(gi);return;}if(Math.random()<(S.phase<=1?.03:.12)&&!S.gameOver){ctx.fillStyle=`hsl(${randInt(0,360)},100%,50%)`;ctx.fillRect(randInt(0,360),randInt(0,230),randInt(5,30),randInt(5,30));}},S.phase<=1?8000:3000);
   }
 }
 
 function openCalculator(){
-  createWindow('Calculator','🧮',`<div class="calculator">
-    <div class="calc-display" id="calc-display">0</div>
-    <div class="calc-buttons">
-      <button class="calc-btn" onclick="calcInput('7')">7</button><button class="calc-btn" onclick="calcInput('8')">8</button>
-      <button class="calc-btn" onclick="calcInput('9')">9</button><button class="calc-btn" onclick="calcInput('/')">÷</button>
-      <button class="calc-btn" onclick="calcInput('4')">4</button><button class="calc-btn" onclick="calcInput('5')">5</button>
-      <button class="calc-btn" onclick="calcInput('6')">6</button><button class="calc-btn" onclick="calcInput('*')">×</button>
-      <button class="calc-btn" onclick="calcInput('1')">1</button><button class="calc-btn" onclick="calcInput('2')">2</button>
-      <button class="calc-btn" onclick="calcInput('3')">3</button><button class="calc-btn" onclick="calcInput('-')">−</button>
-      <button class="calc-btn" onclick="calcInput('0')">0</button><button class="calc-btn" onclick="calcInput('.')">.</button>
-      <button class="calc-btn" onclick="calcEquals()">=</button><button class="calc-btn" onclick="calcInput('+')">+</button>
-      <button class="calc-btn" onclick="calcClear()" style="grid-column:span 4;background:#e88">C</button>
-    </div></div>`,260,320);
+  createWindow('Calculator','🧮','<div class="calculator"><div class="calc-display" id="calc-display">0</div><div class="calc-buttons"><button class="calc-btn" onclick="calcIn(\'7\')">7</button><button class="calc-btn" onclick="calcIn(\'8\')">8</button><button class="calc-btn" onclick="calcIn(\'9\')">9</button><button class="calc-btn" onclick="calcIn(\'/\')">÷</button><button class="calc-btn" onclick="calcIn(\'4\')">4</button><button class="calc-btn" onclick="calcIn(\'5\')">5</button><button class="calc-btn" onclick="calcIn(\'6\')">6</button><button class="calc-btn" onclick="calcIn(\'*\')">×</button><button class="calc-btn" onclick="calcIn(\'1\')">1</button><button class="calc-btn" onclick="calcIn(\'2\')">2</button><button class="calc-btn" onclick="calcIn(\'3\')">3</button><button class="calc-btn" onclick="calcIn(\'-\')">−</button><button class="calc-btn" onclick="calcIn(\'0\')">0</button><button class="calc-btn" onclick="calcIn(\'.\')">.</button><button class="calc-btn" onclick="calcEq()">=</button><button class="calc-btn" onclick="calcIn(\'+\')">+</button><button class="calc-btn" onclick="calcClr()" style="grid-column:span 4;background:#e88">C</button></div></div>',260,320);
 }
 let calcStr='';
-function calcInput(ch){if(shouldError()){spawnError("Calculator can't count that.");return;}calcStr+=ch;const d=document.getElementById('calc-display');if(d)d.textContent=calcStr;}
-function calcEquals(){
-  const d=document.getElementById('calc-display');if(!d)return;
-  if(shouldError()){d.textContent=pick(['42','NaN','undefined','💀','no','∞','fish','Error']);calcStr='';return;}
-  try{let r=eval(calcStr);if(Math.random()<(S.phase<=1?0.1:0.35)){r+=randInt(-10,10);if(r===eval(calcStr))r+=1;}d.textContent=r;calcStr=String(r);}
-  catch(e){d.textContent='MATH IS BROKEN';calcStr='';}
+function calcIn(ch){if(shouldError()){spawnError("Calculator cannot count.");return;}calcStr+=ch;const d=document.getElementById('calc-display');if(d)d.textContent=calcStr;}
+function calcEq(){const d=document.getElementById('calc-display');if(!d)return;if(shouldError()){d.textContent=pick(['42','NaN','💀','no','∞','fish','Error']);calcStr='';return;}try{let r=eval(calcStr);if(Math.random()<.3){r+=randInt(-10,10);}d.textContent=r;calcStr=String(r);}catch(e){d.textContent='BROKEN';calcStr='';}}
+function calcClr(){if(shouldError()){spawnError("Clear is unclear.");return;}calcStr='';const d=document.getElementById('calc-display');if(d)d.textContent='0';}
+
+function openInternet(){
+  const w=createWindow('Internet Explorer','🌐','<div style="padding:12px;text-align:center"><div style="background:#eee;border:2px inset #999;padding:4px 8px;margin-bottom:12px;text-align:left;font-size:12px">🌐 http://www.definitely-real-internet.com</div><div class="loading-bar-container"><div class="loading-bar" id="inet-bar"></div></div><div class="loading-text" id="inet-status">Connecting...</div><div id="inet-content" style="margin-top:16px;display:none"><p style="font-size:16px;font-weight:bold">🌐 The Internet</p><p style="font-size:12px;color:#888;margin-top:4px">Loaded in: '+randInt(45000,99000)+'ms</p><br><button class="error-btn" onclick="spawnError(\'Connection lost.\')">🔍 Search</button> <button class="error-btn" onclick="spawnError(\'Emails forwarded to void.\')">📧 Email</button> <button class="error-btn" onclick="spawnError(\'File downloaded to parallel universe.\')">⬇️ Download</button></div></div>',420,300);
+  if(w){let p=0;const bar=w.el.querySelector('#inet-bar'),st=w.el.querySelector('#inet-status');const msgs=['Looking up DNS...','Negotiating with server...','Downloading the internet...','Buffering patience...','Bribing router...'];const iv=setInterval(()=>{if(S.gameOver||!document.contains(w.el)){clearInterval(iv);return;}p+=randInt(3,15);if(S.phase>=2&&Math.random()<.15)p=Math.max(0,p-randInt(5,20));bar.style.width=Math.min(p,100)+'%';st.textContent=pick(msgs);if(p>=100){clearInterval(iv);st.textContent='Loaded! (A miracle)';w.el.querySelector('#inet-content').style.display='block';}},500);}
 }
-function calcClear(){if(shouldError()){spawnError("Clear button is unclear.");return;}calcStr='';const d=document.getElementById('calc-display');if(d)d.textContent='0';}
 
 function openDocuments(){
-  const files=[
-    {icon:'📄',name:'budget.xls',err:"All zeros. That's correct."},
-    {icon:'📄',name:'resume.doc',err:"Skills: clicking things. Weaknesses: also clicking things."},
-    {icon:'📁',name:'Secrets',err:"ACCESS DENIED. Nice try."},
-    {icon:'📄',name:'todo.txt',err:"Todo: Fix computer. Status: lol"},
-    {icon:'🖼️',name:'photo.jpg',err:"This image is too powerful to display."},
-    {icon:'📄',name:'passwords.txt',err:"All changed to 'password'. You're welcome."},
-    {icon:'🎵',name:'song.mp3',err:"Speakers have filed a noise complaint."},
-    {icon:'📄',name:'readme.txt',err:"This file is write-only."},
-  ];
-  let h='<div class="file-grid">';
-  files.forEach(f=>{h+=`<div class="file-item" onclick="spawnError('${f.err.replace(/'/g,"\'")}')"><div class="file-icon">${f.icon}</div>${f.name}</div>`;});
-  createWindow('My Documents','📁',h+'</div>',380,280);
+  const files=[{i:'📄',n:'budget.xls',e:"All zeros."},{i:'📄',n:'resume.doc',e:"Skills: clicking. Weaknesses: also clicking."},{i:'📁',n:'Secrets',e:"ACCESS DENIED."},{i:'📄',n:'todo.txt',e:"Todo: Fix computer. Status: lol"},{i:'🖼️',n:'photo.jpg',e:"Too powerful to display."},{i:'📄',n:'passwords.txt',e:"All changed to 'password'."},{i:'🎵',n:'song.mp3',e:"Speakers filed a noise complaint."}];
+  let h='<div class="file-grid">';files.forEach(f=>{h+='<div class="file-item" onclick="spawnError(\''+f.e.replace(/'/g,"\\'")+"')\"><div class=\"file-icon\">"+f.i+"</div>"+f.n+"</div>";});
+  createWindow('My Documents','📁',h+'</div>',380,260);
 }
 
 function openHelp(){
-  createWindow('Help','❓',helpContent,420,380);
-  if(Math.random()<0.5)setTimeout(()=>spawnError("Even opening help causes errors."),1500);
+  createWindow('Help','❓','<div class="help-content"><h3>❓ Help Center</h3><p>Welcome! Here you will find absolutely no help.</p><h3>Q: My computer keeps showing errors</h3><p>A: Feature, not a bug.</p><h3>Q: How do I stop errors?</h3><p>A: You don\'t.</p><h3>Q: Blue screen keeps appearing</h3><p>A: Blue is calming. Free meditation.</p><h3>Q: Can I uninstall Windoze?</h3><p>A: It\'s a state of mind.</p><h3>Q: Popups keep appearing</h3><p>A: You ARE the 1,000,000th visitor. (You\'re not.)</p><h3>Q: My cursor is doing weird things</h3><p>A: Your cursor is expressing itself.</p><h3>Q: Forced update took over my screen</h3><p>A: Standard procedure. 3 new bugs installed.</p><h3>Q: Adobie keeps asking to update</h3><p>A: That is the only thing Adobie does.</p><h3>Q: Edge wants to be my default browser</h3><p>A: Don\'t make eye contact.</p><h3>Q: Norton found viruses</h3><p>A: Norton IS the virus.</p><h3>Q: How do I uninstall McAfee?</h3><p>A: You can\'t. Nobody can. John McAfee couldn\'t.</p><h3>Helpful Tips:</h3><p>1. Don\'t</p><p>2. Figure it out yourself 😊</p></div>',420,400);
+  if(Math.random()<.5)setTimeout(()=>spawnError("Even opening help causes errors."),1500);
 }
 
 function openSettings(){
-  createWindow('Settings','⚙️',`<div class="settings-panel">
-    <p style="font-weight:bold;margin-bottom:8px;">⚙️ System Settings</p>
-    <label>🔊 Volume: <input type="range" value="50" oninput="if(shouldError())spawnError('Volume control has lost control.')"></label>
-    <label>🖥️ Brightness: <input type="range" value="80" oninput="if(shouldError()){document.body.style.filter='brightness('+Math.random()+')';spawnError('Brightness entered the shadow realm.')}"></label>
-    <label><input type="checkbox" onchange="spawnError('You cannot change what cannot be changed.')"> Enable stability</label>
-    <label><input type="checkbox" checked onchange="spawnError('Errors are a core feature.')"> Enable errors</label>
-    <label><input type="checkbox" onchange="spawnError('Clippy is eternal.')"> Disable Clippy</label>
-    <label><input type="checkbox" onchange="spawnError('Popups are part of the authentic experience.')"> Block popups</label><br>
-    <button class="error-btn" onclick="spawnError('Settings saved to /dev/null.')">Save</button>
-    <button class="error-btn" onclick="spawnError('There are no defaults. Only chaos.')">Reset</button>
-  </div>`,340,360);
+  createWindow('Settings','⚙️','<div class="settings-panel"><p style="font-weight:bold;margin-bottom:8px">⚙️ System Settings</p><label>🔊 Volume: <input type="range" value="50" oninput="if(shouldError())spawnError(\'Volume lost control.\')"></label><label>🖥️ Brightness: <input type="range" value="80" oninput="if(shouldError()){document.body.style.filter=\'brightness(\'+Math.random()+\')\';spawnError(\'Brightness entered shadow realm.\')}"></label><label><input type="checkbox" onchange="spawnError(\'Cannot change what cannot be changed.\')"> Enable stability</label><label><input type="checkbox" checked onchange="spawnError(\'Errors are a core feature.\')"> Enable errors</label><label><input type="checkbox" onchange="spawnError(\'Clippy is eternal.\')"> Disable Clippy</label><label><input type="checkbox" onchange="spawnError(\'Popups are authentic experience.\')"> Block popups</label><br><button class="error-btn" onclick="spawnError(\'Saved to /dev/null.\')">Save</button> <button class="error-btn" onclick="spawnError(\'No defaults. Only chaos.\')">Reset</button></div>',340,360);
 }
 
-function openFind(){
-  createWindow('Find','🔍',`<div style="padding:12px;">
-    <p style="font-weight:bold;margin-bottom:8px;">🔍 Find Files</p>
-    <div style="display:flex;gap:4px;margin-bottom:12px;">
-      <input type="text" style="flex:1;border:2px inset #999;padding:2px 6px;font-size:12px;" placeholder="Search..." id="find-input">
-      <button class="error-btn" onclick="doFind()">Find Now</button>
-    </div>
-    <div id="find-results" style="font-size:12px;color:#555;">Type something and click Find Now</div>
-  </div>`,350,250);
-}
-function doFind(){
-  const i=document.getElementById('find-input'),r=document.getElementById('find-results');
-  if(!i||!r)return;
-  if(shouldError()){spawnError("Find has lost itself.");return;}
-  const f=['not_your_file.exe','definitely_a_virus.bat','your_data_lol.zip','error_log_'+randInt(1,999)+'.txt','help_me.sos','cookies_nom_nom.dat'];
-  r.innerHTML='<p><b>Results:</b></p>'+f.map(x=>`<p style="cursor:pointer;margin:2px 0" onclick="spawnError('Cannot open ${x}: on vacation.')">${x}</p>`).join('');
-}
+function openFind(){createWindow('Find','🔍','<div style="padding:12px"><p style="font-weight:bold;margin-bottom:8px">🔍 Find Files</p><div style="display:flex;gap:4px;margin-bottom:12px"><input type="text" style="flex:1;border:2px inset #999;padding:2px 6px;font-size:12px" placeholder="Search..." id="find-input"><button class="error-btn" onclick="doFind()">Find</button></div><div id="find-results" style="font-size:12px;color:#555">Type something and click Find</div></div>',340,240);}
+function doFind(){const i=document.getElementById('find-input'),r=document.getElementById('find-results');if(!i||!r)return;if(shouldError()){spawnError("Find lost itself.");return;}const f=['not_your_file.exe','definitely_a_virus.bat','error_log_'+randInt(1,999)+'.txt','help_me.sos','cookies.dat'];r.innerHTML='<p><b>Results:</b></p>'+f.map(x=>'<p style="cursor:pointer;margin:2px 0" onclick="spawnError(\'Cannot open: on vacation.\')">'+x+'</p>').join('');}
 
 function openPrograms(){
-  const p=[
-    {name:'Minesweeper',icon:'💣',err:"Hit a mine. The irony."},
-    {name:'Solitaire',icon:'🃏',err:"Solitaire is lonely right now."},
-    {name:'Defragmenter',icon:'📊',err:"The defragmenter fragmented itself."},
-    {name:'Command Prompt',icon:'⬛',err:"Ran out of commands."},
-    {name:'Media Player',icon:'🎵',err:"Having an existential crisis."},
-    {name:'Virus Scanner',icon:'🛡️',err:"Found 847 viruses. Plot twist: IT is the virus."},
-    {name:'Download RAM',icon:'🐏',err:"RAM download requires downloading RAM first."},
-  ];
-  let h='<div class="file-grid">';
-  p.forEach(x=>{h+=`<div class="file-item" onclick="spawnError('${x.err.replace(/'/g,"\'")}')"><div class="file-icon">${x.icon}</div>${x.name}</div>`;});
-  createWindow('Programs','📁',h+'</div>',360,280);
+  const p=[{n:'Minesweeper',i:'💣',e:"Hit a mine. Ironic."},{n:'Solitaire',i:'🃏',e:"Solitaire is lonely."},{n:'Defragmenter',i:'📊',e:"Defragmenter fragmented itself."},{n:'Command Prompt',i:'⬛',e:"Ran out of commands."},{n:'Media Player',i:'🎵',e:"Having existential crisis."},{n:'Virus Scanner',i:'🛡️',e:"Found 847 viruses. Scanner IS the virus."},{n:'Adobie Reader',i:'🔴',e:"Adobie needs to update first."},{n:'Edgé',i:'🌊',e:"Edge wants to be your default... for everything."},{n:'Norton',i:'🛡️',e:"Norton found Norton as a threat."},{n:'McAfee',i:'🔓',e:"McAfee cannot be opened. Or closed. Or uninstalled."},{n:'WinRAR',i:'📦',e:"Trial expired 847 days ago. Still works somehow."},{n:'iTunez',i:'🎵',e:"iTunes installed QuickTime without asking."}];
+  let h='<div class="file-grid">';p.forEach(x=>{h+='<div class="file-item" onclick="spawnError(\''+x.e.replace(/'/g,"\\'")+"')\"><div class=\"file-icon\">"+x.i+"</div>"+x.n+"</div>";});
+  createWindow('Programs','📁',h+'</div>',400,320);
 }
 
-function openShutdown(){
-  createWindow('Shut Down Windoze','🔌',`<div style="padding:20px;text-align:center;">
-    <p style="font-size:14px;margin-bottom:16px;">Are you sure you want to shut down?</p>
-    <button class="error-btn" onclick="spawnError('DENIED. You live here now.')">Shut Down</button>
-    <button class="error-btn" onclick="spawnError('Restarting... just kidding.')">Restart</button>
-    <button class="error-btn" onclick="this.closest('.window').remove()">Cancel</button>
-  </div>`,300,160);
+function openShutdown(){createWindow('Shut Down','🔌','<div style="padding:20px;text-align:center"><p style="font-size:14px;margin-bottom:16px">Shut down?</p><button class="error-btn" onclick="spawnError(\'DENIED. You live here now.\')">Shut Down</button> <button class="error-btn" onclick="spawnError(\'Restarting... just kidding.\')">Restart</button> <button class="error-btn" onclick="this.closest(\'.window\').remove()">Cancel</button></div>',280,150);}
+
+// ═══════════════ JOKE APPS ═══════════════
+
+// ADOBIE READER — It only wants to update
+function openAdobe(){
+  const w=createWindow('Adobie Reader DC','🔴','<div class="app-body"><div class="app-logo">🔴</div><h3>Adobie Reader DC v23.847.1</h3><p>Thank you for opening Adobie Reader!</p><p>Before you can do anything, we need to update.</p><div class="progress-fake"><div class="loading-bar-container"><div class="loading-bar" id="adobe-bar" style="width:0%"></div></div><p class="loading-text" id="adobe-status">Checking for updates...</p></div><p style="font-size:10px;color:#999;margin-top:8px">Adobie Reader has been checking for updates since 1993. It has never found them.</p><br><button class="error-btn" onclick="spawnError(\'Adobie must update before it can update.\')">Update Now</button> <button class="error-btn" onclick="spawnError(\'Adobie cannot be used without updating. Adobie cannot update. This is the Adobie paradox.\')">Open PDF</button> <button class="error-btn" onclick="spawnError(\'Remind me later has been scheduled for every 3 minutes forever.\')">Remind Me Later</button></div>',380,380);
+  if(w){let p=0;const iv=setInterval(()=>{if(!document.contains(w.el)){clearInterval(iv);return;}p+=randInt(1,5);if(Math.random()<.2)p=Math.max(0,p-randInt(3,10));const bar=w.el.querySelector('#adobe-bar'),st=w.el.querySelector('#adobe-status');if(!bar){clearInterval(iv);return;}bar.style.width=Math.min(p,99)+'%';const msgs=['Checking for updates...','Downloading update metadata...','Updating the updater...','Preparing to prepare update...','Contacting Adobie servers...','Adobie servers are napping...','Update found! Downloading...','Download failed. Retrying...','Re-checking for updates...'];st.textContent=pick(msgs);if(p>=99){p=0;st.textContent='Update failed. Restarting check...';}},800);}
+}
+
+// EDGÉ BROWSER — Passive-aggressive guilt trip
+function openEdge(){
+  const nags=['Make Edgé your default browser?','Edgé is faster than your current browser.','Your current browser is hurting Edgé\'s feelings.','Edgé has been waiting patiently. Please.','Give Edgé a chance. It has changed.','Edgé promises to be better this time.','Your current browser doesn\'t love you like Edgé does.','Edgé is crying. Are you happy now?','PLEASE. Edgé is BEGGING you.','Fine. Edgé will remember this.'];
+  let nagIdx=0;
+  const w=createWindow('Microsoft Edgé','🌊','<div class="app-body"><div class="app-logo">🌊</div><h3>Welcome to Microsoft Edgé</h3><p>The browser that really, REALLY wants to be your default.</p><div class="edge-nag" id="edge-nag"><p id="edge-nag-text">'+nags[0]+'</p><button class="primary" onclick="spawnError(\'Edgé is now your default browser. And your default everything. You cannot undo this.\')">Yes, make default</button><button onclick="edgeNag()">No thanks</button><button onclick="edgeNag()">Not now</button><button onclick="edgeNag()">Never</button><button onclick="edgeNag()">Stop asking</button></div><p style="font-size:10px;color:#999;margin-top:8px">Edgé will ask again in 30 seconds regardless of your choice.</p><br><button class="error-btn" onclick="spawnError(\'Edgé cannot browse the internet. It can only ask to be your default.\')">Browse Web</button> <button class="error-btn" onclick="spawnError(\'Downloads are only available if Edgé is your default browser.\')">Downloads</button></div>',400,400);
+  if(w){const ni=setInterval(()=>{if(!document.contains(w.el)){clearInterval(ni);return;}SFX.notify();nagIdx=(nagIdx+1)%nags.length;const t=w.el.querySelector('#edge-nag-text');if(t)t.textContent=nags[nagIdx];},8000);}
+}
+function edgeNag(){SFX.error();const nags=["Edgé heard you say no. Edgé doesn't accept no.","That button doesn't work. Try 'Yes'.","Edgé is processing your rejection...","Edgé has filed your 'no' in the recycle bin.","Edgé will ask again. And again. And again.","Did you mean to click 'Yes'? Edgé thinks so."];spawnError(pick(nags));}
+
+// NORTON 360 — The virus pretending to be antivirus
+function openNorton(){
+  const w=createWindow('Norton 360°','🛡️','<div class="app-body"><div class="app-logo">🛡️</div><h3>Norton 360° Security Suite</h3><p>Scanning your system for threats...</p><div class="norton-scan" id="norton-log">C:\\> Norton Scan initiated...\nC:\\> Scanning system files...</div><br><p><b>Threats Found: </b><span id="norton-count">0</span></p><p><b>CPU Usage: </b><span id="norton-cpu">47%</span></p><p><b>RAM Usage: </b><span id="norton-ram">2.1 GB</span></p><br><button class="error-btn" onclick="spawnError(\'Norton cannot quarantine threats because Norton IS the threat.\')">Quarantine All</button> <button class="error-btn" onclick="spawnError(\'Your Norton subscription expired in 2003. You still cannot uninstall it.\')">Renew ($299/yr)</button> <button class="error-btn" onclick="spawnError(\'Norton has blocked your attempt to close Norton.\')">Close</button></div>',380,420);
+  if(w){let threats=0;const viruses=['trojan_horse.exe','not_a_virus.bat','your_homework.zip','definitely_legal_movie.avi','free_robux.exe','bitcoin_miner.js','norton_antivirus.exe','clippy_revenge.dll','keyboard_logger.sys','your_browser_history.dat','embarrassing_photo.jpg','save_file_corrupted.sav','existence_is_pain.txt','actual_important_file.doc (false positive)','windows_itself.sys'];
+  const iv=setInterval(()=>{if(!document.contains(w.el)){clearInterval(iv);return;}threats++;const log=w.el.querySelector('#norton-log'),cnt=w.el.querySelector('#norton-count'),cpu=w.el.querySelector('#norton-cpu'),ram=w.el.querySelector('#norton-ram');if(!log){clearInterval(iv);return;}log.textContent+='\nTHREAT FOUND: '+pick(viruses)+' [SEVERITY: '+pick(['LOW','MEDIUM','HIGH','CRITICAL','NUCLEAR','YES'])+']';log.scrollTop=log.scrollHeight;cnt.textContent=threats;cpu.textContent=Math.min(99,47+threats*3)+'%';ram.textContent=(2.1+threats*0.3).toFixed(1)+' GB';if(threats>10&&Math.random()<.3)spawnError('Norton is using more resources than the viruses it found.');S.stability-=1;},1500);}
+}
+
+// MCAFEE — Impossible to uninstall
+function openMcAfee(){
+  const steps=['<div class="uninstall-step">Step 1: Click "Uninstall"<br><button class="error-btn" onclick="mcafeeStep(2)">Uninstall</button></div>','<div class="uninstall-step">Step 2: Are you sure?<br><button class="error-btn" onclick="mcafeeStep(3)">Yes, uninstall</button> <button class="error-btn" onclick="spawnError(\'Good choice. McAfee stays.\')">Cancel</button></div>','<div class="uninstall-step">Step 3: Are you REALLY sure? McAfee protects you!<br><button class="error-btn" onclick="mcafeeStep(4)">YES. UNINSTALL.</button> <button class="error-btn" onclick="spawnError(\'Thank you for keeping McAfee.\')">I changed my mind</button></div>','<div class="uninstall-step">Step 4: Please complete this survey first (required)<br><p style="font-size:10px">Why are you leaving?</p><button class="error-btn" onclick="mcafeeStep(5)">Skip Survey</button></div>','<div class="uninstall-step">Step 5: Survey cannot be skipped. Please type your reason:<br><input type="text" style="width:100%;border:2px inset #999;padding:2px;font-size:11px;margin:4px 0" placeholder="Type reason..."><br><button class="error-btn" onclick="mcafeeStep(6)">Submit & Uninstall</button></div>','<div class="uninstall-step">Step 6: Uninstalling... please wait...<br><div class="loading-bar-container" style="width:100%"><div class="loading-bar" style="width:87%"></div></div><p style="font-size:10px;margin-top:4px">87% complete... ERROR: McAfee has reinstalled itself.</p><br><button class="error-btn" onclick="mcafeeStep(1)">Try Again</button></div>'];
+  createWindow('McAfee Total Protection™','🔓','<div class="app-body"><div class="app-logo">🔓</div><h3>McAfee Total Protection™</h3><p>Your trial expired <b>847 days ago</b>.</p><p>McAfee cannot be uninstalled. This is not a bug. This is McAfee.</p><div id="mcafee-steps">'+steps[0]+'</div><br><p style="font-size:9px;color:#999">John McAfee himself could not uninstall this software.</p></div>',380,400);
+  window._mcafeeSteps=steps;
+}
+function mcafeeStep(n){
+  const c=document.getElementById('mcafee-steps');
+  if(!c)return;
+  if(n>6){spawnError('McAfee has survived the uninstall. McAfee always survives.');n=1;}
+  c.innerHTML=window._mcafeeSteps[n-1];
+  if(n>=4)spawnError('McAfee does not want to be uninstalled. McAfee is sad.');
+}
+
+// WINRAR — Eternal trial
+function openWinRAR(){
+  const days=randInt(847,9999);
+  createWindow('WinRAR','📦','<div class="app-body"><div class="app-logo">📦</div><h3>WinRAR 5.71</h3><p style="color:#a00;font-weight:bold">⚠️ Your evaluation period has expired!</p><p>You have been using WinRAR for <b>'+days+' days</b> without paying.</p><p>Your trial expired <b>'+(days-40)+' days ago</b>.</p><br><p>WinRAR still works though. It always works. WinRAR is the most patient software ever created.</p><br><button class="error-btn" onclick="spawnError(\'Payment page not found. WinRAR is free now. It was always free. The trial was a suggestion.\')">Buy Now ($29.95)</button> <button class="error-btn" onclick="this.closest(\'.window\').querySelector(\'.win-body\').innerHTML=\'<div class=app-body><div class=app-logo>📦</div><h3>WinRAR</h3><p>Thank you for continuing to not pay for WinRAR.</p><p>WinRAR respects your financial decisions.</p><p>See you tomorrow with the same reminder.</p><p style=font-size:10px;color:#999;margin-top:12px>WinRAR has been free since 1995 and will never actually lock you out. This is an honor system and WinRAR trusts you.</p></div>\'">Close (use anyway)</button></div>',360,360);
+}
+
+// ITUNEZ — Installs things you didn't ask for
+function openiTunes(){
+  const w=createWindow('iTunez','🎵','<div class="app-body"><div class="app-logo">🎵</div><h3>iTunez 12.847</h3><p>Welcome to iTunez! While you were reading this, iTunez has installed:</p><div id="itunes-installed" style="margin:8px 0;font-size:11px;background:#f8f8f8;border:1px solid #ddd;padding:8px;max-height:120px;overflow-y:auto">• QuickTime (you didn\'t ask for this)<br>• Bonjour (nobody knows what this is)<br>• Apple Software Update (updates nothing)</div><p id="itunes-count">3 programs installed without consent</p><br><button class="error-btn" onclick="spawnError(\'iTunez cannot play music. iTunez can only install software.\')">Play Music</button> <button class="error-btn" onclick="spawnError(\'Your library has been uploaded to the cloud. Which cloud? THE cloud.\')">Library</button> <button class="error-btn" onclick="itunesInstall()">Check for Updates</button></div>',380,380);
+  if(w){let count=3;const junk=['Apple Mobile Device Support','Apple Application Support (32-bit)','Apple Application Support (64-bit)','iCloud Control Panel','Safari (wait, what?)','Apple Push Notification','MobileMe (it\'s back from the dead)','Ping (remember Ping? No? Good.)','GarageBand (you don\'t have a Mac)','Xcode (why?)','macOS Catalina (on Windows????)','The entire App Store','A copy of U2\'s album (again)','Steve Jobs\' ghost','Another copy of QuickTime'];
+  window._itunesJunk=junk;window._itunesCount=count;window._itunesW=w;
+  const iv=setInterval(()=>{if(!document.contains(w.el)){clearInterval(iv);return;}if(Math.random()<.3&&!S.gameOver){const inst=w.el.querySelector('#itunes-installed'),cnt=w.el.querySelector('#itunes-count');if(!inst)return;window._itunesCount++;inst.innerHTML+='• '+pick(junk)+'<br>';inst.scrollTop=inst.scrollHeight;cnt.textContent=window._itunesCount+' programs installed without consent';SFX.notify();}},5000);}
+}
+function itunesInstall(){spawnError('Update found: iTunez 12.848. This update installs 7 more programs you don\'t want.');if(window._itunesW&&document.contains(window._itunesW.el)){const inst=window._itunesW.el.querySelector('#itunes-installed');if(inst){for(let i=0;i<3;i++){inst.innerHTML+='• '+pick(window._itunesJunk)+' (UPDATE)<br>';}inst.scrollTop=inst.scrollHeight;}}}
+
+// ═══════════════ DOWNLOAD MORE RAM ═══════════════
+function openDownloadRAM(){
+  const w=createWindow('Download More RAM™','🐏','<div class="ram-window"><div class="ram-header"><h2>🐏 DownloadMoreRAM Pro™</h2><p>#1 trusted RAM downloader since 1847</p></div><div class="ram-stats"><div class="ram-stat"><div class="val" id="ram-current">4 GB</div><div class="lbl">Current</div></div><div class="ram-stat"><div class="val" id="ram-target">4 GB</div><div class="lbl">After Download</div></div><div class="ram-stat"><div class="val" id="ram-speed">0 MB/s</div><div class="lbl">Speed</div></div><div class="ram-stat"><div class="val" id="ram-status">READY</div><div class="lbl">Status</div></div></div><div class="ram-progress"><div class="ram-bar-outer"><div class="ram-bar-inner" id="ram-bar"></div><div class="ram-bar-text" id="ram-bar-text">0%</div></div></div><div class="ram-log" id="ram-log">C:\\RAM> Ready. Click START.</div><div class="ram-btns"><button class="error-btn" id="ram-start-btn" onclick="startRAM()" style="background:#2ecc71;color:#fff;font-weight:700">▶ START</button> <button class="error-btn" onclick="spawnError(\'Premium: $9,999.99/month per gigabyte.\')">⭐ PREMIUM</button></div></div>',380,400);
+}
+function startRAM(){
+  const bar=document.getElementById('ram-bar'),bt=document.getElementById('ram-bar-text'),log=document.getElementById('ram-log'),spd=document.getElementById('ram-speed'),tgt=document.getElementById('ram-target'),sts=document.getElementById('ram-status'),btn=document.getElementById('ram-start-btn');
+  if(!bar)return;btn.disabled=true;btn.textContent='⏳ DOWNLOADING...';sts.textContent='ACTIVE';sts.style.color='#2ecc71';
+  const msgs=['Connecting to RAM cloud...','Bypassing firewall...','Downloading RAM_chunk.dll...','Compressing 1s and 0s...','Teaching RAM to remember...','WARNING: RAM is sentient...','Downloading viruses... I mean RAM...','Patching ram_patch_patch.exe...'];
+  let pct=0,gb=4;
+  const addLog=m=>{log.textContent+='\nC:\\RAM> '+m;log.scrollTop=log.scrollHeight;};
+  const iv=setInterval(()=>{
+    if(S.gameOver){clearInterval(iv);return;}
+    if(S.phase>=3&&Math.random()<.2){pct=Math.max(0,pct-randInt(3,15));addLog('ERROR: RAM leaked.');}
+    else pct+=randInt(1,5);pct=Math.min(pct,100);
+    spd.textContent=randInt(1,99999)+' '+pick(['B/s','KB/s','MB/s','GB/s','TB/s','vibes/s']);
+    if(pct>20)gb=randInt(4,32);if(pct>50)gb=randInt(32,256);if(pct>80)gb=randInt(256,99999);
+    tgt.textContent=gb+' GB';
+    if(Math.random()<.2)addLog(pick(msgs));
+    if(Math.random()<(S.phase<=1?.05:.15))spawnError('RAM download error: '+pick(['firewall made of fire','existential crisis','buffer is crying']));
+    bar.style.width=pct+'%';bt.textContent=pct+'%';
+    if(pct>=100){clearInterval(iv);spd.textContent='0';sts.textContent='DONE?';sts.style.color='#e74c3c';btn.textContent='✅ COMPLETE';btn.style.background='#e74c3c';addLog('COMPLETE! Downloaded '+randInt(1,999)+','+randInt(100,999)+' GB of RAM!');addLog('(None of it is real)');S.stability-=randInt(5,15);setTimeout(()=>spawnError('DownloadMoreRAM™ consumed all actual RAM.'),1500);}
+  },400);
 }
 
 // ═══════════════ DESKTOP SETUP ═══════════════
 function setupDesktop(){
   const d=document.getElementById('desktop');
-  // remove old icons
   d.querySelectorAll('.desktop-icon').forEach(e=>e.remove());
   desktopIcons.forEach(di=>{
-    const el=document.createElement('div');
-    el.className='desktop-icon';el.style.left=di.x+'px';el.style.top=di.y+'px';
-    el.innerHTML=`<span class="icon-img">${di.icon}</span><span class="icon-label">${di.label}</span>`;
+    const el=document.createElement('div');el.className='desktop-icon';el.style.left=di.x+'px';el.style.top=di.y+'px';
+    el.innerHTML='<span class="icon-img">'+di.icon+'</span><span class="icon-label">'+di.label+'</span>';
     el.addEventListener('dblclick',()=>openApp(di.action));
     el.addEventListener('touchend',e=>{e.preventDefault();if(el._lt&&Date.now()-el._lt<400)openApp(di.action);el._lt=Date.now();});
     d.appendChild(el);
@@ -1392,170 +992,73 @@ function setupDesktop(){
 
 // ═══════════════ START MENU ═══════════════
 document.getElementById('start-btn').addEventListener('click',()=>{
-  const m=document.getElementById('start-menu');
-  m.style.display=m.style.display==='block'?'none':'block';
-  if(shouldError())setTimeout(()=>spawnError("Start menu encountered a false start."),300);
+  SFX.click();
+  const m=document.getElementById('start-menu');m.style.display=m.style.display==='block'?'none':'block';
+  if(shouldError())setTimeout(()=>spawnError("Start menu: false start."),300);
 });
-document.querySelectorAll('.menu-item').forEach(i=>{
-  i.addEventListener('click',()=>{document.getElementById('start-menu').style.display='none';openApp(i.dataset.action);});
-});
-document.addEventListener('click',e=>{
-  if(!e.target.closest('#start-menu')&&!e.target.closest('#start-btn'))
-    document.getElementById('start-menu').style.display='none';
-});
-document.getElementById('desktop').addEventListener('contextmenu',e=>{
-  e.preventDefault();if(shouldError())spawnError("Right-click is a privilege, not a right.");
-});
+document.querySelectorAll('.menu-item').forEach(i=>i.addEventListener('click',()=>{document.getElementById('start-menu').style.display='none';openApp(i.dataset.action);}));
+document.addEventListener('click',e=>{if(!e.target.closest('#start-menu')&&!e.target.closest('#start-btn'))document.getElementById('start-menu').style.display='none';});
+document.getElementById('desktop').addEventListener('contextmenu',e=>{e.preventDefault();if(shouldError())spawnError("Right-click is a privilege.");});
 
-// ═══════════════ PHASE-BASED CHAOS ENGINE ═══════════════
-function updatePhase(){
-  const newPhase = currentPhase();
-  if(newPhase !== S.phase){
-    S.phase = newPhase;
-    onPhaseChange(newPhase);
-  }
+// ═══════════════ CHAOS ENGINE ═══════════════
+function updatePhase(){const p=currentPhase();if(p!==S.phase){S.phase=p;onPhaseChange(p);}}
+function onPhaseChange(p){
+  if(p===1)setTimeout(showClippy,2000);
+  if(p===2){setTimeout(()=>spawnPopupAd(),randInt(3000,8000));setTimeout(()=>triggerCursorChaos(),randInt(5000,12000));}
+  if(p===3){setTimeout(()=>triggerForcedUpdate(),randInt(3000,10000));document.getElementById('desktop-glitch').style.opacity='.3';document.getElementById('desktop').style.background=`hsl(${180+randInt(-20,20)},${40+randInt(0,20)}%,${25+randInt(0,10)}%)`;}
+  if(p===4){document.getElementById('desktop-glitch').style.opacity='.6';document.getElementById('desktop').style.background=`hsl(${randInt(0,360)},30%,20%)`;}
 }
 
-function onPhaseChange(phase){
-  // Phase transitions
-  if(phase === 1){
-    // First crack - subtle clippy
-    setTimeout(()=>showClippy(), 2000);
-  }
-  if(phase === 2){
-    // Things get real — first popup ad
-    setTimeout(()=>spawnPopupAd(), randInt(3000,8000));
-    // First cursor effect
-    setTimeout(()=>triggerCursorChaos(), randInt(5000,12000));
-  }
-  if(phase === 3){
-    // First forced update
-    setTimeout(()=>triggerForcedUpdate(), randInt(3000,10000));
-    // Desktop degradation begins
-    document.getElementById('desktop-glitch').style.opacity='0.3';
-    // Desktop bg shift
-    document.getElementById('desktop').style.background =
-      `hsl(${180 + randInt(-20,20)}, ${40+randInt(0,20)}%, ${25+randInt(0,10)}%)`;
-  }
-  if(phase === 4){
-    // NUCLEAR
-    document.getElementById('desktop-glitch').style.opacity='0.6';
-    document.getElementById('desktop').style.background =
-      `hsl(${randInt(0,360)}, 30%, 20%)`;
-  }
-}
-
-// Random events scaled by phase
 function scheduleChaos(){
-  if(S.gameOver) return;
+  if(S.gameOver||S.booting)return;
   updatePhase();
-
-  const events = [];
-
-  // Errors (always possible, but rare in phase 0)
-  if(S.phase >= 1) events.push(()=>spawnError());
-  if(S.phase >= 1) events.push(()=>showClippy());
-
-  // Popups (phase 2+)
-  if(S.phase >= 2) events.push(()=>spawnPopupAd());
-
-  // Cursor chaos (phase 1+ subtle, phase 2+ wild)
-  if(S.phase >= 1 && !S.cursorChaosActive) events.push(()=>triggerCursorChaos());
-
-  // Forced updates (phase 3+)
-  if(S.phase >= 3 && !S.updateActive) events.push(()=>triggerForcedUpdate());
-
-  // Desktop icon shuffle (phase 2+)
-  if(S.phase >= 2) events.push(()=>{
-    document.querySelectorAll('.desktop-icon').forEach(i=>{
-      i.style.left=randInt(20,200)+'px';i.style.top=randInt(20,500)+'px';
-    });
-    if(S.phase >= 3) spawnError("Your icons have rearranged themselves.");
-  });
-
-  // Random phantom window (phase 2+)
-  if(S.phase >= 2) events.push(()=>{
-    const titles=['Updating...','Installing drivers...','virus_scan.exe','Syncing...','Optimizing...'];
-    createWindow(pick(titles),'⏳',`<div style="padding:20px;text-align:center;">
-      <div class="loading-bar-container"><div class="loading-bar" style="width:${randInt(10,90)}%"></div></div>
-      <p style="font-size:12px;margin-top:8px;">${pick(titles)}</p>
-    </div>`,300,140);
-  });
-
-  // Screen color glitch (phase 2+)
-  if(S.phase >= 2) events.push(()=>{
-    const desk = document.getElementById('desktop');
-    desk.style.background=`hsl(${randInt(0,360)},50%,30%)`;
-    setTimeout(()=>{if(S.phase<3)desk.style.background='var(--win-bg)';},1500);
-  });
-
-  // BG degradation flicker (phase 3+)
-  if(S.phase >= 3) events.push(()=>{
-    document.body.style.filter=`hue-rotate(${randInt(0,30)}deg) saturate(${rand(0.8,1.5)})`;
-    setTimeout(()=>{if(!S.gameOver)document.body.style.filter='';},2000);
-  });
-
-  // Popup storm (phase 4 only)
-  if(S.phase >= 4) events.push(()=>{
-    for(let i=0;i<randInt(2,4);i++) setTimeout(()=>spawnPopupAd(), i*300);
-  });
-
-  if(events.length > 0) pick(events)();
-
-  // Schedule next chaos — intervals get shorter as phases increase
-  const delays = [12000, 8000, 5000, 3000, 1500];
-  const baseDelay = delays[Math.min(S.phase, delays.length-1)];
-  const nextDelay = baseDelay + randInt(0, baseDelay * 0.6);
-  setTimeout(scheduleChaos, nextDelay);
+  const ev=[];
+  if(S.phase>=1)ev.push(()=>spawnError(),()=>showClippy());
+  if(S.phase>=2)ev.push(()=>spawnPopupAd());
+  if(S.phase>=1&&!S.cursorChaosActive)ev.push(()=>triggerCursorChaos());
+  if(S.phase>=3&&!S.updateActive)ev.push(()=>triggerForcedUpdate());
+  if(S.phase>=2)ev.push(()=>{document.querySelectorAll('.desktop-icon').forEach(i=>{i.style.left=randInt(20,280)+'px';i.style.top=randInt(20,500)+'px';});if(S.phase>=3)spawnError("Icons rearranged themselves.");});
+  if(S.phase>=2)ev.push(()=>{const t=pick(['Updating...','virus_scan.exe','Syncing...']);createWindow(t,'⏳','<div style="padding:20px;text-align:center"><div class="loading-bar-container"><div class="loading-bar" style="width:'+randInt(10,90)+'%"></div></div><p style="font-size:12px;margin-top:8px">'+t+'</p></div>',280,130);});
+  if(S.phase>=3)ev.push(()=>{document.body.style.filter=`hue-rotate(${randInt(0,30)}deg)`;setTimeout(()=>{if(!S.gameOver)document.body.style.filter='';},2000);});
+  if(S.phase>=4)ev.push(()=>{for(let i=0;i<randInt(2,4);i++)setTimeout(spawnPopupAd,i*300);});
+  if(ev.length)pick(ev)();
+  const delays=[12000,8000,5000,3000,1500];
+  setTimeout(scheduleChaos,delays[Math.min(S.phase,delays.length-1)]+randInt(0,4000));
 }
 
-// ═══════════════ GAME START & RESTART ═══════════════
+// ═══════════════ GAME START ═══════════════
 function startGame(){
-  S.started=true; S.startTime=Date.now(); S.gameOver=false;
-  S.errorCount=0; S.bsodCount=0; S.stability=100; S.phase=0;
-  S.windows=[]; S.windowIdCounter=0; S.zCounter=100;
-  S.popupsClosed=0; S.updatesEndured=0;
-  S.updateActive=false; S.cursorChaosActive=false; S.cursorMode='normal';
-
+  S.started=true;S.startTime=Date.now();S.gameOver=false;
+  S.errorCount=0;S.bsodCount=0;S.stability=100;S.phase=0;
+  S.windows=[];S.windowIdCounter=0;S.zCounter=100;
+  S.popupsClosed=0;S.updatesEndured=0;
+  S.updateActive=false;S.cursorChaosActive=false;S.cursorMode='normal';S.booting=false;
   document.getElementById('start-screen').style.display='none';
-  document.getElementById('desktop').style.display='block';
-  document.getElementById('desktop').style.background='var(--win-bg)';
-  document.getElementById('desktop-glitch').style.opacity='0';
-  document.getElementById('taskbar').style.display='flex';
-  document.getElementById('bsod').style.display='none';
   document.getElementById('gameover').style.display='none';
-  document.getElementById('forced-update').style.display='none';
-  document.getElementById('clippy').style.display='none';
-  document.getElementById('fake-cursor').style.display='none';
-  document.body.style.filter='';
-  document.body.className='';
-
+  document.body.style.filter='';document.body.className='';
   document.querySelectorAll('.window,.error-dialog,.popup-ad').forEach(e=>e.remove());
-  clearTrail();
+  S.trailDots.forEach(d=>d.remove());S.trailDots=[];
+  document.getElementById('fake-cursor').style.display='none';
 
-  setupDesktop();
-  playStartupSound();
-  updateClock();
-  setInterval(updateClock,30000);
-
-  // Friendly clippy greeting in honeymoon phase
-  setTimeout(()=>{
-    document.getElementById('clippy-text').textContent = "Welcome to Windoze 95++! Everything is working perfectly. 😊";
-    document.getElementById('clippy').style.display='block';
-    setTimeout(()=>document.getElementById('clippy').style.display='none', 4000);
-  }, 3000);
-
-  // Start the chaos engine
-  setTimeout(scheduleChaos, 8000);
-
-  // Phase checker
-  setInterval(()=>{ if(!S.gameOver) updatePhase(); }, 2000);
+  // Boot sequence on first start
+  showBootSequence(()=>{
+    document.getElementById('desktop').style.display='block';
+    document.getElementById('desktop').style.background='var(--bg)';
+    document.getElementById('desktop-glitch').style.opacity='0';
+    document.getElementById('taskbar').style.display='flex';
+    document.getElementById('clippy').style.display='none';
+    setupDesktop();
+    SFX.startup();
+    updateClock();
+    setInterval(updateClock,30000);
+    setTimeout(()=>{document.getElementById('clippy-text').textContent="Welcome to Windoze 95++! Everything works perfectly. 😊";document.getElementById('clippy').style.display='block';setTimeout(()=>document.getElementById('clippy').style.display='none',4000);},3000);
+    setTimeout(scheduleChaos,10000);
+    setInterval(()=>{if(!S.gameOver)updatePhase();},2000);
+  }, false);
 }
 
 document.getElementById('start-screen').addEventListener('click',startGame);
-document.getElementById('restart-btn').addEventListener('click',()=>{
-  document.getElementById('gameover').style.display='none';startGame();
-});
+document.getElementById('restart-btn').addEventListener('click',()=>{document.getElementById('gameover').style.display='none';startGame();});
 </script>
 </body>
 </html>
